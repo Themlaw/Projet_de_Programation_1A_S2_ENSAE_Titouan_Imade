@@ -125,4 +125,4 @@ dmypy.json
 .pyre/
 
 #Personal test files
-test_personal.py
+test_perso.py
