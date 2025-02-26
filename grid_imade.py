@@ -160,7 +160,7 @@ class Grid():
                         if self.color[i1][j1]==0 or self.color[i2][j2]==0:
                             l.append( (pos1,pos2)) 
                             d[(pos1,pos2)]=True
-                        if (self.color[i1][j1]==1 and self.color[i2][j2]==1) or (self.color[i1][j1]==2 and self.color[i2][j2]==1)  or (self.color[i1][j1]==2 and self.color[i2][j2]==2) or ((self.color[i1][j1]==1 and self.color[i2][j2]==2)) : #on fait que 3 car sinon on aura le symétrique dans le cas où 1 2 ou 2 1
+                        if (self.color[i1][j1]==1 and self.color[i2][j2]==1) or (self.color[i1][j1]==2 and self.color[i2][j2]==1)  or (self.color[i1][j1]==2 and self.color[i2][j2]==2) or ((self.color[i1][j1]==1 and self.color[i2][j2]==2)): #on fait que 3 car sinon on aura le symétrique dans le cas où 1 2 ou 2 1
                          
                             l.append( (pos1, pos2))
                             d[(pos1,pos2)]=True
