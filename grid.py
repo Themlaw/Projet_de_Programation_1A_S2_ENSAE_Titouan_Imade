@@ -81,22 +81,32 @@ class Grid():
         plt.xticks(np.arange(0, self.m + 1, 1)) 
         plt.yticks(np.arange(0, self.n + 1, 1)) 
         v=self.value.copy() 
-        v.reverse()# problème d'affichage
+        v.reverse()# issue because matrix is numerated from top to bottom but a grid is from bottom to top
+        def border_of_cell(x,y): #To mark the border of each cell
+            rect = plt.Rectangle((x-.5, y-.5), 1,1, fill=False, color = "black", lw=1)
+            ax = plt.gca()
+            ax.add_patch(rect)
+            return rect
         
         for i in range(self.n):
             for j in range(self.m):
+                    border_of_cell(j+0.5,i+0.5)
                     plt.text(j + 0.5, i + 0.5, v[i][j], ha='center', va='center', color='black', fontsize=12)
-
-        #for j in range(self.m):
-            #plt.text(j + 0.5, 2.1, str(j), ha='center', va='center', color='black', fontsize=12)
-
-
-        #for i in range(self.n):
-            #plt.text(-0.1, i + 0.5, str(i), ha='center', va='center', color='black', fontsize=12)
+                    
         
         plt.xticks([])
         plt.yticks([])
+        #To add the coordinates we first changes the border to avoid plotting on the cells
+        plt.xlim(-0.5, self.m + 0.5)
+        plt.ylim(-0.5, self.n + 0.5)
 
+        # We ass the line numbers
+        for i in range(self.n):
+            plt.text(-0.2, i + 0.5, str(self.n - 1 - i), ha='right', va='center', fontsize=12)
+
+        #The the rows
+        for j in range(self.m):
+            plt.text(j + 0.5, self.n + 0.2, str(j), ha='center', va='bottom', fontsize=12)
 
         plt.show()
         
