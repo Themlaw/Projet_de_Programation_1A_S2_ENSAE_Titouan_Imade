@@ -81,33 +81,22 @@ class Grid():
         plt.xticks(np.arange(0, self.m + 1, 1)) 
         plt.yticks(np.arange(0, self.n + 1, 1)) 
         v=self.value.copy() 
-        v.reverse()# problème d'affichage
+        v.reverse()
         
         for i in range(self.n):
             for j in range(self.m):
-                    plt.text(j + 0.5, i + 0.5, v[i][j], ha='center', va='center', color='black', fontsize=12)
-
-        #for j in range(self.m):
-            #plt.text(j + 0.5, 2.1, str(j), ha='center', va='center', color='black', fontsize=12)
-
-
-        #for i in range(self.n):
-            #plt.text(-0.1, i + 0.5, str(i), ha='center', va='center', color='black', fontsize=12)
-        
+                    plt.text(j + 0.5, i + 0.5, v[i][j], ha='center', va='center', color='black', fontsize=12) 
         plt.xticks([])
         plt.yticks([])
-
-
         plt.show()
         
-
-    def is_forbidden(self, i, j):
+    def is_forbidden(self, i: int, j: int) -> bool :
         """
         Returns True is the cell (i, j) is black and False otherwise
         """
         return self.color[i][j] == 4
 
-    def cost(self, pair):
+    def cost(self, pair : tuple[tuple[int]]) -> int:
         """
         Returns the cost of a pair
  
@@ -123,19 +112,19 @@ class Grid():
         """
         return abs(self.value[pair[0][0]][pair[0][1]] - self.value[pair[1][0]][pair[1][1]])
 
-    def is_valid_pair(self, i1,j1,i2,j2):
-        valid = (0 <= i1 < self.n) and (0 <= j1 < self.m) and (0 <= i2 < self.n) and (0 <= j2 < self.m) and (i1!= i2 or j1!= j2) #All coordinate are valid
-        valid = valid and (not self.is_forbidden(i1, j1)) and (not self.is_forbidden(i2, j2)) #Both cells are not black
+    def is_valid_pair(self, i1 : int,j1 : int, i2: int, j2: int) -> bool:
+        valid = (0 <= i1 < self.n) and (0 <= j1 < self.m) and (0 <= i2 < self.n) and (0 <= j2 < self.m) and (i1 != i2 or j1 != j2) # All coordinate are valid
+        valid = valid and (not self.is_forbidden(i1, j1)) and (not self.is_forbidden(i2, j2)) # Both cells are not black
         #We check the validity of the colors
-        valid = valid and (self.color[i1][j1]==0 or self.color[i2][j2]==0 or #If white all pair color valid except black
-                           (self.color[i1][j1]==1 and self.color[i2][j2]==1) or #red with red
-                           (self.color[i1][j1]==2 and self.color[i2][j2]==1)  or (self.color[i1][j1]==1 and self.color[i2][j2]==2)  or #red with blue
-                           (self.color[i1][j1]==2 and self.color[i2][j2]==2) or #Blue with Blue 
-                           (self.color[i1][j1]==3 and self.color[i2][j2]==3) #Green with green
+        valid = valid and (self.color[i1][j1] == 0 or self.color[i2][j2] == 0 or # If white all pair color valid except black
+                           (self.color[i1][j1] == 1 and self.color[i2][j2] == 1) or # red with red
+                           (self.color[i1][j1] == 2 and self.color[i2][j2] == 1)  or (self.color[i1][j1]==1 and self.color[i2][j2]==2)  or # red with blue
+                           (self.color[i1][j1] == 2 and self.color[i2][j2] == 2) or # Blue with Blue 
+                           (self.color[i1][j1] == 3 and self.color[i2][j2] == 3) # Green with green
                            )
         return valid
 
-    def all_pairs(self):
+    def all_pairs(self) -> list:
         """
         Returns a list of all pairs of cells that can be taken together. 
 
@@ -144,10 +133,10 @@ class Grid():
         pairs = []
         for i in range(self.n):
             for j in range(self.m): 
-                if self.is_valid_pair(i,j,i+1,j): #True if both cells are not black
+                if self.is_valid_pair(i, j, i+1, j): # True if both cells are not black
                     pairs.append(((i, j), (i+1, j)))
                     
-                if self.is_valid_pair(i,j,i,j+1): #Same as above
+                if self.is_valid_pair(i, j, i, j+1): # Same as above
                     pairs.append(((i, j), (i, j+1)))
                     
         return pairs
