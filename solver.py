@@ -1,8 +1,6 @@
 import itertools
 from grid import Grid
 from copy import deepcopy 
-import networkx as nx
-from networkx.algorithms import bipartite
 import matplotlib.pyplot as plt
 import numpy as np
 from math import inf
@@ -32,22 +30,22 @@ class Solver:
         self.grid = grid
         self.pairs = list()
 
-    def score(self):#We want to minimize the score
+    def score(self) -> int: # We want to minimize the score
         """
         Computes of the list of pairs in self.pairs
         """
         score = 0
         color_grid = deepcopy(self.grid.color)
         for pair in self.pairs:
-            #We add to the score the cost of each pair
+            # We add to the score the cost of each pair
             score += self.grid.cost(pair) 
-            #Each cell already counted is colored in black
+            # Each cell already counted is colored in black
             color_grid[pair[0][0]][pair[0][1]] = 4 
             color_grid[pair[1][0]][pair[1][1]] = 4
         for i in range(self.grid.n): 
             for j in range(self.grid.m):
                 if color_grid[i][j] != 4:
-                    score += self.grid.value[i][j] #We add the individual value of each cell that is not black/already counted
+                    score += self.grid.value[i][j] # We add the individual value of each cell that is not black/already counted
         
         return score
      
@@ -89,7 +87,7 @@ class SolverGreedy(Solver):
         return ind
     
 
-    def run(self) -> list: # solves the grid with the greedy method : in each step, the less expensive pair is chosen 
+    def run(self): # solves the grid using the greedy method : in each step, the least expensive pair is chosen 
         sol = []
         #self.pairs = self.grid.all_pairs()
         G = self.grid.all_pairs()
@@ -116,11 +114,11 @@ class SolverGreedy(Solver):
 
 class SolverBipart(Solver):
     
-    def is_even(self, pair : tuple) ->bool: # returns True if pair[0] + pair[1] is even or, otherwise, returns False 
+    def is_even(self, pair : tuple) -> bool: # returns True if pair[0] + pair[1] is even or, otherwise, returns False 
         return (  (pair[0] + pair[1]) %2  == 0 )
     
-    def adjacency_dictionnary(self, p : list) -> dict: #builds the adjacency dictionnary of p
-        #d[(i,j)] = liste des sommets liés à (i,j)
+    def adjacency_dictionary(self, p : list) -> dict: # Builds the adjacency dictionary of p
+        # d[(i,j)] = list of neighbours of the cell (i,j)
         d = {}
         for (p1,p2) in p: 
             i1, j1 = p1[0], p1[1]
@@ -138,9 +136,9 @@ class SolverBipart(Solver):
         return dC.get(vertex,[]) == []
     
     def extended_graph(self, C : list, G : list) -> dict: # returns an extended graph of G in order to find an augmenting path
-        dC = self.adjacency_dictionnary(C)
+        dC = self.adjacency_dictionary(C)
         s, p = -inf, inf
-        d = self.adjacency_dictionnary(G)
+        d = self.adjacency_dictionary(G)
         dgc = {} 
         for i in range(self.grid.n):
              for j in range(self.grid.m):
@@ -177,11 +175,11 @@ class SolverBipart(Solver):
                     dgc[vertex1].append(vertex2) # because we are not in C, edges are oriented from even to odd
                 else:                           # same if vertex1 is odd
                     dgc[vertex2].append(vertex1)
-        return dgc # dgc is an adjacency dictionnary which contains oriented edges and two new vertices (s and p)
+        return dgc # dgc is an adjacency dictionary which contains oriented edges and two new vertices (s and p)
     
     
 
-    def exists_path(self, G: dict, s: int, p: int, visited: list, path: list) -> tuple[bool, list]: # returns a path from s to p in G if it exists or, otherwise, returns False
+    def exists_path(self, G: dict, s: int, p: int, visited: list, path: list) -> tuple[bool, list]: # Returns a path from s to p in G if it exists, otherwise, returns False
         if s == p: 
             path.append(s)
             return True # if s = p, the path [s] is right
@@ -206,11 +204,11 @@ class SolverBipart(Solver):
             L.append((path[k], path[k+1]))
         return L
 
-    def augmenting_path(self, C : list, G : list) -> tuple[bool, list]: # returns an augmenting_path thanks to the extented graph and its path from s (source) to p (sink)
+    def augmenting_path(self, C : list, G : list) -> tuple[bool, list]: # returns an augmenting_path using the extended graph and its path from s (source) to p (sink)
         dgc = self.extended_graph(C, G)
         return self.exists_path(dgc, -inf, inf,[],[])
     
-    def symmetric_difference(self, path : list, C : list, df : dict) -> list : # returns the symmetric difference of path and C which contains the elements that are not shared
+    def symmetric_difference(self, path : list, C : list) -> list : # returns the symmetric difference of path and C which contains the elements that are not shared
         nC = []
         A = self.edges(path)
         B = C
@@ -218,29 +216,26 @@ class SolverBipart(Solver):
             (s1,s2) = edge
             if (s1,s2) not in B and (s2,s1) not in B:
                 nC.append(edge)
-                df[s1] = True
-                df[s2] = True
+               
 
         for edge in B: # we are looking for edges which are in C but not in the path
             (s1,s2) = edge
             if edge not in A and (s2,s1) not in A:
                 nC.append(edge)
-                df[s1] = True
-                df[s2] = True
         return nC
 
 
-    def run(self) -> tuple[list, int]: # returns the solution of the grid using a maximum matching 
+    def run(self): # Solves the grid using the maximum matching problem approach
         G = self.grid.all_pairs()
         C = []
-        df = {} # this dictionnary allows us to directly know which vertices are linked, so we do not have to iterate over the solution to see if the vertex (i,j) is in it. 
+        
         pa = self.rev((self.augmenting_path(C,G)[1]))
         
         while self.augmenting_path(C,G): # stops when self.augmenting_path(C,G) = False ie no paths have been found in the extended graph
             
             pa = self.rev((self.augmenting_path(C,G)[1]))
             path = pa[1:-1] # the source and the sink are removed from the real path in G
-            C = self.symmetric_difference(path, C, df) #
+            C = self.symmetric_difference(path, C) #
 
         n = 0 # we are adding vertices which are not linked
         self.pairs = C
