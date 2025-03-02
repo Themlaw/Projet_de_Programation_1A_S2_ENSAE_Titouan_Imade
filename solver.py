@@ -4,7 +4,7 @@ from copy import deepcopy
 import matplotlib.pyplot as plt
 import numpy as np
 from math import inf
-from collections import deque
+
 
 
 class Solver:
@@ -58,28 +58,23 @@ class SolverEmpty(Solver):
     def run(self):
         pass
 
-def remove(pair : tuple, p : list) -> list: # removes the element pair in the list p 
-    l = []
-    (a1,a2) = pair
-    for (b1,b2) in p: 
-        if b1 != a1 and b1 != a2 and b2 != a1 and b2 != a2:
-            l.append((b1,b2))
-    return l
 
 
 
 
-def index_min(l : list) -> int: # returns the index of the minimum of l 
-        if l == []:
-            return (0,0)
-        m,ind=l[0],0
-        for k in range(len(l)):
-            if m>l[k]:
-                m, ind = l[k], k
-        return ind
+
+
 
 
 class SolverGreedy(Solver):
+
+    def remove(self, pair : tuple, p : list) -> list: # removes the element pair in the list p 
+        l = []
+        (a1,a2) = pair
+        for (b1,b2) in p: 
+            if b1 != a1 and b1 != a2 and b2 != a1 and b2 != a2:
+                l.append((b1,b2))
+        return l
 
     def index_min(self, l : list) -> int: # returns the index of the minimum of l 
         if l == []:
@@ -111,7 +106,7 @@ class SolverGreedy(Solver):
                 d[pair[0]] = True
                 d[pair[1]] = True
                 sol.append(pair)
-                interating (remove(pair,G),sol) # we start again, the programm will stop because G will be empty at some point
+                interating (self.remove(pair,G),sol) # we start again, the programm will stop because G will be empty at some point
 
         interating(G,[])
     
@@ -138,7 +133,6 @@ class SolverBipart(Solver):
         return d 
     
     def is_free(self, vertex : tuple, dC : dict) -> bool: # returns True if the vertex is out of C or, otherwise, returns False
-        
         return dC.get(vertex,[]) == []
     
     def extended_graph(self, C : list, G : list) -> dict:# returns an extended graph of G in order to find an augmenting path
