@@ -60,12 +60,6 @@ class SolverEmpty(Solver):
 
 
 
-
-
-
-
-
-
 class SolverGreedy(Solver):
 
     def remove(self, pair : tuple, p : list) -> list: # removes the element pair in the list p 
