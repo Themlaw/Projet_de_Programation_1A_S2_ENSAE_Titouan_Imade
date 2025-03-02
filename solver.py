@@ -4,6 +4,7 @@ from copy import deepcopy
 import matplotlib.pyplot as plt
 import numpy as np
 from math import inf
+from collections import deque
 
 
 class Solver:
@@ -36,16 +37,19 @@ class Solver:
         """
         score = 0
         color_grid = deepcopy(self.grid.color)
+        
         for pair in self.pairs:
             # We add to the score the cost of each pair
             score += self.grid.cost(pair) 
             # Each cell already counted is colored in black
             color_grid[pair[0][0]][pair[0][1]] = 4 
             color_grid[pair[1][0]][pair[1][1]] = 4
+        
         for i in range(self.grid.n): 
             for j in range(self.grid.m):
                 if color_grid[i][j] != 4:
-                    score += self.grid.value[i][j] # We add the individual value of each cell that is not black/already counted
+                    score += self.grid.value[i][j]
+                     # We add the individual value of each cell that is not black/already counted
         
         return score
      
@@ -87,7 +91,7 @@ class SolverGreedy(Solver):
         return ind
     
 
-    def run(self): # solves the grid using the greedy method : in each step, the least expensive pair is chosen 
+    def run(self): # solves the grid using the greedy method : at each step, the least expensive pair is chosen 
         sol = []
         #self.pairs = self.grid.all_pairs()
         G = self.grid.all_pairs()
@@ -112,6 +116,7 @@ class SolverGreedy(Solver):
         interating(G,[])
     
 
+
 class SolverBipart(Solver):
     
     def is_even(self, pair : tuple) -> bool: # returns True if pair[0] + pair[1] is even or, otherwise, returns False 
@@ -133,65 +138,62 @@ class SolverBipart(Solver):
         return d 
     
     def is_free(self, vertex : tuple, dC : dict) -> bool: # returns True if the vertex is out of C or, otherwise, returns False
+        
         return dC.get(vertex,[]) == []
     
-    def extended_graph(self, C : list, G : list) -> dict: # returns an extended graph of G in order to find an augmenting path
+    def extended_graph(self, C : list, G : list) -> dict:# returns an extended graph of G in order to find an augmenting path
         dC = self.adjacency_dictionary(C)
         s, p = -inf, inf
-        d = self.adjacency_dictionary(G)
         dgc = {} 
         for i in range(self.grid.n):
              for j in range(self.grid.m):
                   dgc[(i,j)] = [] #initialisation
         dgc[s] = []
         dgc[p] = []
-        
         for (vertex1, vertex2) in G: 
-            (i1,j1) = vertex1
-            (i2,j2) = vertex2
             if self.is_free(vertex1,dC) and self.is_even(vertex1): # if vertex1 is free and even then an edge is created from s to vertex1
-                dgc[s].append(vertex1)
+                    dgc[s].append(vertex1)
 
-            if self.is_free(vertex2,dC) and self.is_even(vertex2): # same as vertex1 for vertex2
-                dgc[s].append(vertex2)
+            if self.is_free(vertex2,dC) and self.is_even(vertex2): # same for vertex2
+                    dgc[s].append(vertex2)
 
-            elif self.is_free(vertex1,dC) and not(self.is_even(vertex1)): # if vertex1 is free and odd then an edge is created from vertex1 to p
-                    dgc[vertex1].append(p)
+            if self.is_free(vertex1,dC) and not(self.is_even(vertex1)): # if vertex1 is free and odd then an edge is created from vertex1 to p
+                        dgc[vertex1].append(p)
 
-            elif self.is_free(vertex2,dC) and not(self.is_even(vertex2)):  # same as vertex1 for vertex2
-                    dgc[vertex2].append(p)
+            if self.is_free(vertex2,dC) and not(self.is_even(vertex2)):  # same for vertex2
+                        dgc[vertex2].append(p)
             
-        for (vertex1, vertex2) in C: # edges in C
-            (i1,j1) = vertex1
-            (i2,j2) = vertex2
+        for (vertex1, vertex2) in C:        # edges in C 
             if self.is_even(vertex1):        # if vertex1 is even then vertex2 is odd 
                 dgc[vertex2].append(vertex1) # then, because we are in C, edges which links an even vertex and an odd vertex are oriented from odd to even 
+
             else:                            # same if vertex1 is odd
                 dgc[vertex1].append(vertex2) 
         
         for (vertex1,vertex2) in G: 
-            if (vertex1,vertex2) not in C: # edges in G but not in C
+            if (vertex1,vertex2) not in C:      # edges in G but not in C
                 if self.is_even(vertex1):  
                     dgc[vertex1].append(vertex2) # because we are not in C, edges are oriented from even to odd
+
                 else:                           # same if vertex1 is odd
                     dgc[vertex2].append(vertex1)
-        return dgc # dgc is an adjacency dictionary which contains oriented edges and two new vertices (s and p)
-    
-    
-
-    def exists_path(self, G: dict, s: int, p: int, visited: list, path: list) -> tuple[bool, list]: # Returns a path from s to p in G if it exists, otherwise, returns False
-        if s == p: 
+        return dgc                               # dgc is an adjacency dictionary which contains oriented edges and two new vertices (s and p)
+   
+    def exists_path(self, G: dict, s: int, p: int, visited: list, path :list): # Returns a path from s to p if it exists, otherwise, returns None
+        if s == p:
             path.append(s)
-            return True # if s = p, the path [s] is right
+            return self.rev(path)  # we have finished
+
         visited.append(s)
         for neighbour in G[s]:
             if neighbour not in visited:
-                if self.exists_path(G, neighbour, p, visited, path): 
-                    path.append(s)  # if there is a path from this neighbour to p, s is added to the final path
-                    return True, self.rev(path) # path must be reversed because we added in the wrong sense 
+                found = self.exists_path(G, neighbour, p, visited, path)
+                if found is not None:
+                    path.append(s)  # there is a path from this neighbour to p (because fond is not None) so s is added to the final path
+                    return self.rev(path)  # path must be reversed because we added in the wrong sense
 
-        return False  # no paths have been found
-    
+        return None  # no paths have been found
+        
     def rev(self, l : list) -> list: # reverses l  
         L = []
         for k in range(len(l)):
@@ -206,7 +208,7 @@ class SolverBipart(Solver):
 
     def augmenting_path(self, C : list, G : list) -> tuple[bool, list]: # returns an augmenting_path using the extended graph and its path from s (source) to p (sink)
         dgc = self.extended_graph(C, G)
-        return self.exists_path(dgc, -inf, inf,[],[])
+        return self.exists_path(dgc, -inf, inf, [], [])
     
     def symmetric_difference(self, path : list, C : list) -> list : # returns the symmetric difference of path and C which contains the elements that are not shared
         nC = []
@@ -217,7 +219,6 @@ class SolverBipart(Solver):
             if (s1,s2) not in B and (s2,s1) not in B:
                 nC.append(edge)
                
-
         for edge in B: # we are looking for edges which are in C but not in the path
             (s1,s2) = edge
             if edge not in A and (s2,s1) not in A:
@@ -228,16 +229,10 @@ class SolverBipart(Solver):
     def run(self): # Solves the grid using the maximum matching problem approach
         G = self.grid.all_pairs()
         C = []
-        
-        pa = self.rev((self.augmenting_path(C,G)[1]))
-        
-        while self.augmenting_path(C,G): # stops when self.augmenting_path(C,G) = False ie no paths have been found in the extended graph
-            
-            pa = self.rev((self.augmenting_path(C,G)[1]))
-            path = pa[1:-1] # the source and the sink are removed from the real path in G
-            C = self.symmetric_difference(path, C) #
-
-        n = 0 # we are adding vertices which are not linked
+        while self.augmenting_path(C,G) is not None : # Stops when self.augmenting_path(C,G) is None ie no more paths have been found in the extended graph
+            pa = (self.augmenting_path(C,G))[1:-1] # If a path exists in the extended graph, we use "[1:-1]" to remove the source and the sink from the actual path in G
+            C = self.symmetric_difference(pa, C)  # then the new matching consists of elements which were in the previous matching but not in the path, or elements which were in the path but not in the previous matching. According to the extended graph definition, the cardinality of the new matching is higher than that of the previous one.  
         self.pairs = C
+        
          
         
