@@ -135,6 +135,7 @@ class Grid():
     def is_valid_pair(self, i1 : int,j1 : int, i2: int, j2: int) -> bool:
         valid = (0 <= i1 < self.n) and (0 <= j1 < self.m) and (0 <= i2 < self.n) and (0 <= j2 < self.m) and (i1 != i2 or j1 != j2) # All coordinate are valid
         valid = valid and (not self.is_forbidden(i1, j1)) and (not self.is_forbidden(i2, j2)) # Both cells are not black
+        valid = valid and (abs(i1 - i2) + abs(j1 - j2) == 1) # The cells are adjacent
         #We check the validity of the colors
         valid = valid and (self.color[i1][j1] == 0 or self.color[i2][j2] == 0 or # If white all pair color valid except black
                            (self.color[i1][j1] == 1 and self.color[i2][j2] == 1) or # red with red
