@@ -2,6 +2,7 @@ import pygame
 import sys
 from grid import Grid 
 from solver import SolverEmpty
+import math
 
 class PygameGrid():
     def __init__(self, grid, cell_size=100, solver=None):
@@ -17,26 +18,33 @@ class PygameGrid():
         self.screen = pygame.display.set_mode((self.width + 2*self.border, self.height + 2*self.border),pygame.RESIZABLE)
         self.width = self.width + 2*self.border
         self.height = self.height + 2*self.border
-        self.font = pygame.font.SysFont('Arial', 30)
+        self.text_font = pygame.font.SysFont('Arial', 30) #We differentiate the font for texte and cell/coordinate 
+        self.cell_font = pygame.font.SysFont('Arial', 30)
         self.clicked_cells = set()  # Store clicked cells
         self.linked_cells = set()  # Store linked cells
         self.used_cells = set() # Store used cells
         self.time_start_event = None # Store the time when the print event starts
         self.text_event = None # Store the text to print
         self.buttons = {} # Store the buttons
-        self.main_menu = False # Check if the main menu is displayed
-        self.button_width, self.button_height = 200, 40
+        self.main_menu = True # Check if the main menu is displayed
+        self.button_width, self.button_height = 200, 30
+        self.base_button_height = 50 # Base height of the buttons for the resize 
         self.scroll_offset = 0
         self.scroll_speed = 20
-        self.max_scroll = -(len(self.buttons) * self.button_height - self.height)
+        self.offset_button = 10 #Create a gap between buttons on the main menu
+        self.max_scroll = -(len(self.buttons) * (self.button_height ) - self.height)
         self.scrollbar_width = 10
+        self.all_grid_index = ["00","01","02","03","04","05","11","12","13","14","15","16","17","18","19","21","22","23","24","25","26","27","28","29"]
 
     def adjust_for_resize(self):
-        # Adapter la taille des boutons en fonction de la largeur de l'écran
+        self.cell_size = min((self.width - 2*self.border)//self.grid.m,
+                            (self.height - 2*self.border)//self.grid.n)
         self.button_width = self.width // 2
-        self.button_height = max(40, self.height // len(self.buttons))  # Assurez-vous que la hauteur des boutons ne soit pas trop petite
-        self.max_scroll = -(len(self.buttons) * self.button_height - self.height)
-
+        self.button_height = max(self.base_button_height, self.height // len(self.buttons))
+        self.max_scroll = -(len(self.buttons) * (self.button_height ) - self.height)
+        font_size = min(int(self.cell_size * 0.4), 50)  # 40% of cell size, capped at 50
+        self.cell_font = pygame.font.SysFont('Arial', max(12,  font_size))
+        # self.text_font = pygame.font.SysFont('Arial', 20)
 
     def draw_grid(self):
         self.screen.fill((255, 255, 255))
@@ -50,9 +58,10 @@ class PygameGrid():
                 color = (255, 0, 0) if (i, j) in self.clicked_cells else (0,0,0)
                 pygame.draw.rect(self.screen, color, 
                                  (j * self.cell_size + self.border, i * self.cell_size + self.border, self.cell_size, self.cell_size), 1)
-                text = self.font.render(str(self.grid.value[i][j]), True, (0, 0, 0))
-                self.screen.blit(text, (self.border + j * self.cell_size + self.cell_size // 3, 
-                                        self.border + i * self.cell_size + self.cell_size/4))
+                
+                text = self.cell_font.render(str(self.grid.value[i][j]), True, (0, 0, 0))
+                self.screen.blit(text, (self.border + j * self.cell_size + self.cell_size //2.5, 
+                                        self.border + i * self.cell_size + self.cell_size/3))
         
         # Draw lines between linked cells
         for (i1, j1), (i2, j2) in self.solver.pairs:
@@ -62,21 +71,21 @@ class PygameGrid():
         
         # Draw coordinates
         for i in range(self.grid.n):
-            text = self.font.render(str(i), True, (0, 0, 0))
+            text = self.cell_font.render(str(i), True, (0, 0, 0))
             self.screen.blit(text, (self.border//2, self.border + i * self.cell_size + self.cell_size // 3))
         for j in range(self.grid.m):
-            text = self.font.render(str(j), True, (0, 0, 0))
+            text = self.cell_font.render(str(j), True, (0, 0, 0))
             self.screen.blit(text, (self.border + j * self.cell_size + self.cell_size // 3, self.border//3))
 
         #Draw score on the bottom left of the screen
         score = self.solver.score()
-        text = self.font.render(f"Score: {score}", True, (0, 0, 0))
-        self.screen.blit(text, (self.border//2, self.height + self.border*1.25))
+        text = self.text_font.render(f"Score: {score}", True, (0, 0, 0))
+        self.screen.blit(text, (self.border//2, self.height - self.border+20))
         
         #Draw the event text on the bottom of the screen
         if self.text_event is not None:
-            text = self.font.render(self.text_event, True, (0, 0, 0))
-            text_rect = text.get_rect(center=(self.width//2 + self.border, self.height + self.border*1.5))
+            text = self.text_font.render(self.text_event, True, (0, 0, 0))
+            text_rect = text.get_rect(center=(self.width//2, self.height - self.border*0.5))
             self.screen.blit(text, text_rect)
             if pygame.time.get_ticks() - self.time_start_event > 1000:
                 self.text_event = None
@@ -84,35 +93,51 @@ class PygameGrid():
 
     def draw_buttons(self):
         if self.main_menu:
+            self.buttons = {}
             y_pos = self.scroll_offset
-            for button_text in self.buttons:
+            all_grid_index = ["00","01","02","03","04","05","11","12","13","14","15","16","17","18","19","21","22","23","24","25","26","27","28","29"]
+            for index in self.all_grid_index:
                 # Dessiner les boutons
-                pygame.draw.rect(self.screen, (50, 150, 255), (self.width // 4, y_pos, self.button_width, self.button_height))
-                text_surface = self.font.render(button_text, True, (255, 255, 255))
-                self.screen.blit(text_surface, (self.width // 4 + 10, y_pos + 10))
-                y_pos += self.button_height+10
+                button_name = "Grid "+index
+                button = pygame.draw.rect(self.screen, (50, 150, 255), (self.width // 4, y_pos, self.button_width, self.button_height-self.offset_button))
+                text_surface = self.text_font.render(button_name, True, (255, 255, 255))
+                self.screen.blit(text_surface, (self.width // 4 + 10, y_pos+10-self.offset_button))
+                y_pos += self.button_height
+                self.buttons[button_name] = [button,self.switch_to_grid_button,index]
         
         else:
             self.buttons = {}
-            # Draw clear button
-            clear_button_x = self.width + self.border/2+20
-            clear_button_y = self.height + 1.09 * self.border
-            clear_button = pygame.draw.rect(self.screen, (200, 200, 200), 
-                                         (clear_button_x, clear_button_y, 55, 30))
-            clear_text = pygame.font.SysFont('Arial', 20).render("Reset", True, (0, 0, 0))
-            self.screen.blit(clear_text, (clear_button_x+5, clear_button_y+2))
-            
-            self.buttons["clear_button"] = [clear_button, self.clear_button]
-            
-            # Draw show solution button
-            solution_button_x = self.width + self.border/4+10
-            solution_button_y = self.height + 1.55 * self.border
-            solution_button = pygame.draw.rect(self.screen, (200, 200, 200), 
-                                         (solution_button_x, solution_button_y, 110, 30))
-            solution_text = pygame.font.SysFont('Arial', 20).render("Show solution", True, (0, 0, 0))
-            self.screen.blit(solution_text, (solution_button_x+3, solution_button_y+1))
-            
-            self.buttons["solution_button"] = [solution_button,self.show_solution_button]
+            # Get the size of the text to adapt the button size
+            clear_text = self.text_font.render("Reset", True, (0, 0, 0))
+            solution_text = self.text_font.render("Show solution", True, (0, 0, 0))
+            text_padding = 10  # Padding around text
+
+            # Size buttons based on text
+            clear_width, clear_height = clear_text.get_width() + text_padding * 2, clear_text.get_height() + text_padding 
+            solution_width, solution_height = solution_text.get_width() + text_padding * 2, solution_text.get_height() + text_padding
+            if clear_width < solution_width:
+                clear_offset = (solution_width - clear_width)/2 # Offset to center the buttons 
+                solution_offset = 0
+            else:
+                clear_offset = 0
+                solution_offset = (clear_width - solution_width)/2
+               
+        
+            # Position buttons at bottom right corner
+            clear_button_x = self.width - max(clear_width, solution_width) - 10 + clear_offset
+            clear_button_y = self.height - (2 * clear_height + 15)
+            clear_button = pygame.draw.rect(self.screen, (200, 200, 200),
+                                          (clear_button_x, clear_button_y, 
+                                           clear_width, clear_height))
+            self.screen.blit(clear_text, (clear_button_x+text_padding, clear_button_y+text_padding/2))
+            self.buttons["clear_button"] = [clear_button, self.clear_button, None]
+
+            solution_button_x = self.width - max(clear_width, solution_width) - 10 + solution_offset
+            solution_button_y = self.height - (2 * solution_height + 15) + clear_height + 5
+            solution_button = pygame.draw.rect(self.screen, (200, 200, 200),
+                                            (solution_button_x, solution_button_y, solution_width, solution_height))
+            self.screen.blit(solution_text, (solution_button_x+text_padding, solution_button_y+text_padding/2))
+            self.buttons["solution_button"] = [solution_button, self.show_solution_button, None]
     
     def draw_scrollbar(self):
         # Calculer la hauteur de la barre de défilement
@@ -150,44 +175,25 @@ class PygameGrid():
             self.text_event = "Forbidden cell"
             self.clicked_cells.clear()
             
-    def clear_button(self):
+    def clear_button(self,**kwargs):
         self.clicked_cells.clear()
         self.solver.pairs.clear()
         self.used_cells.clear()
         self.time_start_event = pygame.time.get_ticks()
         self.text_event = "Reset"
     
-    def show_solution_button(self):
+    def switch_to_grid_button(self,grid_index,**kwargs):
+        self.grid = Grid.grid_from_file("./input/grid"+grid_index+".in", read_values=True)
+        self.solver = SolverEmpty(self.grid)
+        self.main_menu = False
+        self.adjust_for_resize()
+        self.clicked_cells.clear()
+    
+    def show_solution_button(self,**kwargs):
         self.time_start_event = pygame.time.get_ticks()
         self.text_event = "Showing solution"
     
-    def handle_cell_click(self,pos):
-        x, y = pos
-        col = (x - self.border) // self.cell_size
-        row = (y - self.border) // self.cell_size
-        if 0 <= row < self.grid.n and 0 <= col < self.grid.m and self.grid.color[row][col] != 4:
-            if (row, col) in self.clicked_cells:
-                self.clicked_cells.remove((row, col))  # go back to normal
-            elif (row, col) in self.used_cells:
-                self.time_start_event=pygame.time.get_ticks()
-                self.text_event = "Cell already used"
-                self.clicked_cells.clear()
-            else:
-                self.clicked_cells.add((row, col))  # mark cell in red
-                if len(self.clicked_cells) == 2:
-                    i1, j1 = self.clicked_cells.pop()
-                    i2, j2 = self.clicked_cells.pop()
-                    if self.grid.is_valid_pair(i1, j1, i2, j2):
-                        self.solver.pairs.append(((i1, j1), (i2, j2)))
-                        self.used_cells.add((i1, j1))
-                        self.used_cells.add((i2, j2))
-                    else: #clicked_cell empty because of len 2 with 2 pop
-                        self.time_start_event=pygame.time.get_ticks()
-                        self.text_event = "Invalid pair"
-        elif 0 <= row < self.grid.n and 0 <= col < self.grid.m and self.grid.color[row][col] == 4:
-            self.time_start_event=pygame.time.get_ticks()
-            self.text_event = "Forbidden cell"
-            self.clicked_cells.clear()
+    
     
     def is_finished(self):#Check if the game is finished
         finished = True
@@ -207,19 +213,24 @@ class PygameGrid():
        
     def run(self):
         running = True
-        all_grid_index = ["00","01","02","03","04","05","11","12","13","14","15","16","17","18","19","21","22","23","24","25","26","27","28","29"]
-        for index in all_grid_index:
-            self.buttons["Grid "+index] = [pygame.Rect(self.width // 4, 0, self.button_width, self.button_height)]
+        self.draw_buttons()
         self.adjust_for_resize()
         while running:
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     running = False
                 if event.type == pygame.MOUSEBUTTONDOWN:
-                    self.handle_cell_click(event.pos)
+                    if self.main_menu:
+                        # for button in self.buttons:
+                        #     if self.buttons[button][0].collidepoint(event.pos):
+                        #         self.buttons[button][1](self.buttons[button][2])
+                        pass
+                    else:
+                        self.handle_cell_click(event.pos)
                 if event.type == pygame.VIDEORESIZE:
                     self.width, self.height = event.size
                     self.screen = pygame.display.set_mode((self.width, self.height), pygame.RESIZABLE)
+                    # self.width, self.height = self.width + 2*self.border, self.height + 2*self.border
                     self.adjust_for_resize()
                 if event.type == pygame.MOUSEWHEEL:
                     if event.y > 0:
@@ -229,8 +240,10 @@ class PygameGrid():
             
                 if event.type == pygame.MOUSEBUTTONDOWN:
                     for button in self.buttons:
-                        if self.buttons[button][0].collidepoint(event.pos):
-                            self.buttons[button][1]() # Call the button function
+                        if self.buttons[button][0].collidepoint(event.pos) and self.buttons[button][2] is not None:
+                            self.buttons[button][1](self.buttons[button][2]) # Call the button function
+                        elif self.buttons[button][0].collidepoint(event.pos):
+                            self.buttons[button][1]()
             
             if self.main_menu:
                 self.screen.fill((0,0,0))
