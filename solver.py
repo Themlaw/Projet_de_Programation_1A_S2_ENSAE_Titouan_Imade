@@ -227,7 +227,7 @@ class Solverfinal_bis(Solver):
 
     def __init__(self, grid : Grid):
         super().__init__(grid)
-        n = grid.n
+        n = grid.n 
         m = grid.m 
 
         self.valeurs=grid.value
