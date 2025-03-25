@@ -1,7 +1,7 @@
 from grid import Grid
 from solver import *
 
-data_path = "../input/"
+data_path = "./input/"
 file_name = data_path + "grid04.in" 
 
 g = Grid.grid_from_file(file_name,read_values=True)
@@ -18,6 +18,11 @@ sb = SolverBipart(g)
 sb.run()
 #print((sb.pairs))
 print("The score of the Bipart Solver is : ", sb.score())
+
+sf = Solverfinal_bis(g)
+sf.run()
+#print((sf.pairs))
+print("The score of the final Solver is : ", sf.score()) 
 
 
 
