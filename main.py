@@ -2,7 +2,7 @@ from grid import Grid
 from solver import *
 
 data_path = "./input/"
-file_name = data_path + "grid04.in" 
+file_name = data_path + "grid11.in" 
 
 g = Grid.grid_from_file(file_name,read_values=True)
 #print(g)
