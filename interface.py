@@ -41,9 +41,11 @@ class PygameGrid():
         self.button_width = self.width // 2
         self.button_height = max(self.base_button_height, self.height // len(self.buttons))
         self.max_scroll = -(len(self.buttons) * (self.button_height ) - self.height)
-        font_size = min(int(self.cell_size * 0.4), 50)  # 40% of cell size, capped at 50
+        font_size = min(int(self.cell_size * 0.35), 50)  # 35% of cell size, capped at 50
         self.cell_font = pygame.font.SysFont('Arial', max(12,  font_size))
-        # self.text_font = pygame.font.SysFont('Arial', 20)
+        # Adjust text font size logarithmically based on cell size, with base size of 30
+        text_font_size = int(33 * math.log(max(self.cell_size/5, 20), 30)**2)
+        self.text_font = pygame.font.SysFont('Arial', max(12, min(50, text_font_size)))
 
     def draw_grid(self):
         self.screen.fill((255, 255, 255))
@@ -94,14 +96,22 @@ class PygameGrid():
         if self.main_menu:
             self.buttons = {}
             y_pos = self.scroll_offset
-            all_grid_index = ["00","01","02","03","04","05","11","12","13","14","15","16","17","18","19","21","22","23","24","25","26","27","28","29"]
+            colors = [(255, 255, 200),  (255, 250, 190), (255, 245, 180), (255, 240, 170), (255, 235, 160), (255, 230, 150), (255, 225, 140), (255, 220, 130), 
+                      (255, 215, 120), (255, 210, 110),  (255, 200, 100), (255, 190, 90), (255, 180, 80), (255, 170, 70),(255, 160, 60),  (255, 150, 50),  (255, 140, 40),  
+                      (255, 130, 30),  (255, 120, 20),  (255, 110, 10),  (240, 100, 0),  (220, 90, 0),  (200, 80, 0),  (180, 70, 0)]
+            color_index = 0
+            text_color = (0, 0, 0)
             for index in self.all_grid_index:
                 # Dessiner les boutons
                 button_name = "Grid "+index
-                button = pygame.draw.rect(self.screen, (50, 150, 255), (self.width // 4, y_pos, self.button_width, self.button_height-self.offset_button))
-                text_surface = self.text_font.render(button_name, True, (255, 255, 255))
+                button = pygame.draw.rect(self.screen, colors[color_index], (self.width // 4, y_pos, self.button_width, self.button_height-self.offset_button))
+                text_surface = self.text_font.render(button_name, True, text_color)
                 self.screen.blit(text_surface, (self.width // 4 + 10, y_pos+10-self.offset_button))
                 y_pos += self.button_height
+                if color_index < len(colors)-1:
+                    color_index += 1
+                if int(index)>13:
+                    text_color = (255, 255, 255)
                 self.buttons[button_name] = [button,self.switch_to_grid_button,index]
         
         else:
@@ -137,6 +147,17 @@ class PygameGrid():
                                             (solution_button_x, solution_button_y, solution_width, solution_height))
             self.screen.blit(solution_text, (solution_button_x+text_padding, solution_button_y+text_padding/2))
             self.buttons["solution_button"] = [solution_button, self.show_solution_button, None]
+            
+            
+            #We add a menu button on the top right cornet pf the screen to go back to the main menu
+            menu_text = self.text_font.render("Menu", True, (0, 0, 0))
+            menu_width, menu_height = menu_text.get_width() + text_padding * 2, menu_text.get_height() + text_padding
+            menu_button_x = self.width - menu_width - 10
+            menu_button_y = 10
+            menu_button = pygame.draw.rect(self.screen, (200, 200, 200),
+                                            (menu_button_x, menu_button_y, menu_width, menu_height))
+            self.screen.blit(menu_text, (menu_button_x+text_padding, menu_button_y+text_padding/2))
+            self.buttons["menu_button"] = [menu_button, self.menu_button, None]
     
     def draw_scrollbar(self):
         # Calculer la hauteur de la barre de défilement
@@ -206,7 +227,15 @@ class PygameGrid():
         self.time_start_event = pygame.time.get_ticks()
         self.text_event = "Showing solution"
     
-    
+    def menu_button(self,**kwargs):
+        self.main_menu = True
+        self.draw_buttons()
+        self.width, self.height = 550, 450
+        self.screen = pygame.display.set_mode((self.width, self.height), pygame.RESIZABLE)
+        self.adjust_for_resize()
+        self.clicked_cells.clear()
+        self.solver.pairs.clear()
+        self.used_cells.clear()
     
     def is_finished(self):#Check if the game is finished
         finished = True
@@ -259,17 +288,16 @@ class PygameGrid():
                             self.buttons[button][1]()
             
             if self.main_menu:
-                self.screen.fill((0,0,0))
+                self.screen.fill((138,32,100))
                 self.draw_buttons()
                 self.draw_scrollbar()
-                                                                                                                                                                                                                                                                                                   
+                                                                                                                                                                                                                                                                               
             else: #If we display a grid
                 self.draw_grid()
                 self.draw_buttons()
                 if self.is_finished():
                     self.time_start_event = pygame.time.get_ticks()
                     self.text_event = "Game finished"
-
             pygame.display.flip()
         pygame.quit()
 
