@@ -5,13 +5,12 @@ from solver import SolverEmpty
 import math
 
 class PygameGrid():
-    def __init__(self, grid, cell_size=100, solver=None):
-        self.grid = grid
-        if solver is None:
-            self.solver = SolverEmpty(grid)
-        self.cell_size = cell_size
-        self.width = grid.m * cell_size
-        self.height = grid.n * cell_size
+    def __init__(self):
+        self.grid = Grid(3,4)
+        self.solver = SolverEmpty(self.grid)
+        self.cell_size = 100
+        self.width = self.grid.m * self.cell_size
+        self.height = self.grid.n * self.cell_size
         self.border = 75
         self.colors = [(255, 255, 255), (255, 0, 0), (0, 0, 255), (0, 128, 0), (0, 0, 0)]  # white, red, blue, green, black
         pygame.init()
@@ -20,7 +19,7 @@ class PygameGrid():
         self.height = self.height + 2*self.border
         self.text_font = pygame.font.SysFont('Arial', 30) #We differentiate the font for texte and cell/coordinate 
         self.cell_font = pygame.font.SysFont('Arial', 30)
-        self.clicked_cells = set()  # Store clicked cells
+        self.clicked_cells = []  # Store clicked cells
         self.linked_cells = set()  # Store linked cells
         self.used_cells = set() # Store used cells
         self.time_start_event = None # Store the time when the print event starts
@@ -154,12 +153,26 @@ class PygameGrid():
         if 0 <= row < self.grid.n and 0 <= col < self.grid.m and self.grid.color[row][col] != 4:
             if (row, col) in self.clicked_cells:
                 self.clicked_cells.remove((row, col))  # go back to normal
-            elif (row, col) in self.used_cells:
-                self.time_start_event=pygame.time.get_ticks()
-                self.text_event = "Cell already used"
-                self.clicked_cells.clear()
+            elif len(self.clicked_cells) == 0: # We add the first cell every time
+                self.clicked_cells.append((row, col))
+            elif len(self.clicked_cells) == 1 and ((row, col) in self.used_cells or self.clicked_cells[0] in self.used_cells): #If one of the cell is already used
+                if ((row,col),self.clicked_cells[0]) in self.solver.pairs or (self.clicked_cells[0],(row,col)) in self.solver.pairs: #if we reclick on a matched pair
+                    self.time_start_event=pygame.time.get_ticks()
+                    self.text_event = "Pair undo"
+                    self.used_cells.remove((row,col))
+                    self.used_cells.remove(self.clicked_cells[0])
+                    if ((row,col),self.clicked_cells[0]) in self.solver.pairs:
+                        self.solver.pairs.remove(((row,col),self.clicked_cells[0]))
+                    else:
+                        self.solver.pairs.remove(((self.clicked_cells[0],(row,col))))
+                    self.clicked_cells.clear()
+                else:
+                    self.time_start_event=pygame.time.get_ticks()
+                    self.text_event = "Cell already used"
+                    self.clicked_cells.clear()
+                
             else:
-                self.clicked_cells.add((row, col))  # mark cell in red
+                self.clicked_cells.append((row, col))  # mark cell in red
                 if len(self.clicked_cells) == 2:
                     i1, j1 = self.clicked_cells.pop()
                     i2, j2 = self.clicked_cells.pop()
@@ -263,6 +276,5 @@ class PygameGrid():
 
 
 if __name__ == "__main__":
-    grid = Grid.grid_from_file("input/grid05.in", read_values=True)
-    game = PygameGrid(grid,cell_size=60)
+    game = PygameGrid()
     game.run()
