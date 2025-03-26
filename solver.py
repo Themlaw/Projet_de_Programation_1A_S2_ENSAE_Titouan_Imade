@@ -3,6 +3,7 @@ from copy import deepcopy
 import matplotlib.pyplot as plt
 import numpy as np
 from math import inf
+from scipy.optimize import linear_sum_assignment
 
 
 
@@ -452,3 +453,46 @@ class Solverfinal_bis(Solver):
             # lignes, colonnes = linear_sum_assignment(M)
             # self.pairs = list([(self.cases_paires[lignes[i]],self.cases_impaires[colonnes[i]]) for i in range(len(lignes))])
             # print(s.score2())
+
+class SolverScipy(Solver):#We implement the solver using the linear_sum_assignment function from the scipy library to compare 
+    def __init__(self, grid : Grid):
+        super().__init__(grid)
+        n = grid.n 
+        m = grid.m 
+
+        self.valeurs=grid.value
+        self.couleurs=grid.color
+
+        self.cases_paires = [(i,j) for i in range(n) for j in range(m) if (i+j)%2==0]
+        self.cases_impaires = [(i,j) for i in range(n) for j in range(m) if (i+j)%2==1]
+
+        self.paires = grid.all_pairs()
+
+        y = len(self.cases_paires)
+        z = len(self.cases_impaires)
+        self.matrice = np.zeros([y,z])     #plus de cases paires qu'impaires
+
+        for ((a,b),(c,d)) in self.paires :
+            if (a+b)%2==0:
+                g = self.valeurs[a][b]
+                h = self.valeurs[c][d]
+                self.matrice[self.cases_paires.index((a,b))][self.cases_impaires.index((c,d))]=abs(g-h)-g-h
+            if (c+d)%2==0:
+                g = self.valeurs[a][b]
+                h = self.valeurs[c][d]
+                self.matrice[self.cases_paires.index((c,d))][self.cases_impaires.index((a,b))]=abs(g-h)-g-h
+
+        self.matrice = self.matrice + abs(np.min(self.matrice))
+        if y>z:
+            self.matrice = np.vstack([self.matrice, np.zeros((y-z,y))])
+            
+    def final_solution(self,result):
+        for ((a,b),(c,d)) in result:
+            if self.grid.is_valid_pair(a,b,c,d):
+                self.pairs.append(((a,b),(c,d)))
+                
+    def run(self):
+        M = np.array(self.matrice)
+        lignes, colonnes = linear_sum_assignment(M)
+        result = list([(self.cases_paires[lignes[i]],self.cases_impaires[colonnes[i]]) for i in range(len(lignes))])
+        self.final_solution(result)
