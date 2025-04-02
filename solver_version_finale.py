@@ -328,7 +328,26 @@ class SolverBipart(Solver):
                 else:                           # same if vertex1 is odd
                     dgc[vertex2].append(vertex1)
         return dgc                               # dgc is an adjacency dictionary which contains oriented edges and two new vertices (s and p)
-   
+
+    def rev(self, l : list) -> list: # reverses l 
+        """
+        Reverses the list l.
+
+        Parameters
+        ----------
+        l : list
+            A list to be reversed.
+
+        Returns
+        -------
+        list
+            The reversed list.
+        """ 
+        L = []
+        for k in range(len(l)):
+            L.append(l[len(l)-1-k])
+        return L
+        
     def exists_path(self, G: dict, s: int, p: int, visited: list, path :list): # Returns a path from s to p if it exists, otherwise, returns None
         """
         Returns a path from s to p if it exists, otherwise returns None.
@@ -352,11 +371,10 @@ class SolverBipart(Solver):
             A list representing the path from s to p, or an empty list if no path exists.
         """
         queue = deque([s])
-       
         visited = {s: None}
         while queue:
             u = queue.popleft()
-            if u in G: #listes des sommets adj
+            if u in G: # listes des sommets adj
                 for v in G[u]: 
                     if v not in visited:
                         visited[v] = u
@@ -366,42 +384,10 @@ class SolverBipart(Solver):
                             while v != None:
                                 path.append(v) 
                                 v = visited[v]
-                            return list(reversed(path))
+                            return list(self.rev(path))
         return []
-
-       
-        #if s == p:
-           # path.append(s)
-            #return self.rev(path)  # we have finished
-
-        #visited.append(s)
-        #for neighbour in G[s]:
-            #if neighbour not in visited:
-                #found = self.exists_path(G, neighbour, p, visited, path)
-                #if found is not None:
-                    #path.append(s)  # there is a path from this neighbour to p (because fond is not None) so s is added to the final path
-                    #return self.rev(path)  # path must be reversed because we added in the wrong sense
-
-        #return None  # no paths have been found
         
-    def rev(self, l : list) -> list: # reverses l 
-        """
-        Reverses the list l.
-
-        Parameters
-        ----------
-        l : list
-            A list to be reversed.
-
-        Returns
-        -------
-        list
-            The reversed list.
-        """ 
-        L = []
-        for k in range(len(l)):
-            L.append(l[len(l)-1-k])
-        return L
+    
 
     def edges(self, path : list) -> list: # returns the edges which compose the path
         """
@@ -485,13 +471,11 @@ class SolverBipart(Solver):
         while pa != [] : # Stops when self.augmenting_path(C,G) is None ie no more paths have been found in the extended graph
             ch = (pa)[1:-1] # If a path exists in the extended graph, we use "[1:-1]" to remove the source and the sink from the actual path in G
             C = self.symmetric_difference(ch, C)
-            pa =  self.augmenting_path(C,G) 
-            if len(C) > 0:
-                print(len(C)) # then the new matching consists of elements which were in the previous matching but not in the path, or elements which were in the path but not in the previous matching. According to the extended graph definition, the cardinality of the new matching is higher than that of the previous one.  
+            pa =  self.augmenting_path(C,G)  # then the new matching consists of elements which were in the previous matching but not in the path, or elements which were in the path but not in the previous matching. According to the extended graph definition, the cardinality of the new matching is higher than that of the previous one.  
         self.pairs = C
             
 
-class SolverHongrois(Solver):
+class SolverHungarian(Solver):
     """
     A solver class implementing the Hungarian algorithm for solving the assignment problem.
 
@@ -534,7 +518,7 @@ class SolverHongrois(Solver):
 
         y = len(self.cases_paires)
         z = len(self.cases_impaires)
-        self.matrice = np.zeros([y,z])     #plus de cases paires qu'impaires
+        self.matrice = np.zeros([y,z])    
 
         for ((a,b),(c,d)) in self.paires :
             if (a+b)%2==0:
@@ -551,7 +535,7 @@ class SolverHongrois(Solver):
             self.matrice = np.vstack([self.matrice, np.zeros((y-z,y))])
             
 
-    def initialisationbis(self,M):
+    def initialisation(self,M):
         """
         Performs the initialization step for the Hungarian algorithm.
 
@@ -560,6 +544,7 @@ class SolverHongrois(Solver):
         M : ndarray
             The matrix to be initialized by subtracting the row and column minima.
         """
+            
         row_min = np.min(M, axis=1)
         M -= row_min[:, np.newaxis]
         col_min = np.min(M, axis=0)
@@ -567,8 +552,8 @@ class SolverHongrois(Solver):
             
             
 
-    def nombre_zero_nonbarrebis(self, M, barre): 
-            """
+    def unslashed_zero(self, M, slashed): 
+        """
             Returns a dictionary with the number of zero entries per row that are not blocked.
 
             Parameters
@@ -583,21 +568,21 @@ class SolverHongrois(Solver):
             dict
                 A dictionary with row indices as keys and the count of zeros as values.
             """
-            s = M.shape[0]
-            d = {}
-            for i in range(s):
+        s = M.shape[0]
+        d = {}
+        for i in range(s):
                 n = 0
                 b = False
                 for j in range(s):
-                    if M[i,j] == 0 and (i,j) not in barre:
+                    if M[i,j] == 0 and (i,j) not in slashed:
                         n += 1
                         b = True
                     if b :
                         d[i] = n
-            return d 
+        return d 
     
-    def indice_min_dico(self, d, deja_vu): 
-            """
+    def index_min(self, d, deja_vu): 
+        """
             Returns the index of the minimum value from the dictionary that has not been visited.
 
             Parameters
@@ -612,14 +597,14 @@ class SolverHongrois(Solver):
             int
                 The index of the row with the minimum zero count.
             """
-            m, i = 10000, -1
-            for (key,value) in d.items():
+        m, i = 10000, -1
+        for (key,value) in d.items():
                 if value < m and key not in deja_vu:
                     m, i = value, key
-            return i 
+        return i 
 
     def step1(self,M):
-            """
+        """
             Executes the first step of the Hungarian algorithm.
 
             Parameters
@@ -636,54 +621,46 @@ class SolverHongrois(Solver):
                 - barre : dict
                     A dictionary of blocked cells.
             """
-            barre = {}
-            s = M.shape[0]
-            encadre = {}
-            deja_vu = []
-            avance = True 
-            while avance : 
-                l1, l2 = len(encadre), len(barre)
-                d = self.nombre_zero_nonbarrebis(M, barre)
-                ligne = self.indice_min_dico(d, deja_vu)
-                deja_vu.append(ligne)
+        slashed = {}
+        s = M.shape[0]
+        outlined = {}            
+        visited = []
+        a = True 
+        while a : 
+                l1, l2 = len(outlined), len(slashed)
+                d = self.unslashed_zero(M, slashed)
+                row = self.index_min(d, visited)
+                visited.append(row)
                 
                 b = False
                 col = -1
                 for j in range(s):
-                    if M[ligne,j] == 0 and (ligne,j) not in barre and not b : 
-                        encadre[(ligne, j)] = True
+                    if M[row,j] == 0 and (row,j) not in slashed and not b : 
+                        outlined[(row, j)] = True
                         b = True
                         col = j
                         
                 if b: 
                     for j in range(s):
-                        if j != col and M[ligne,j] == 0:
-                            barre[(ligne,j)] = True
+                        if j != col and M[row,j] == 0:
+                            slashed[(row,j)] = True
                             
                     for i in range(s):
-                        if i != ligne and M[i,col] == 0:
-                            barre[(i,col)] = True
+                        if i != row and M[i,col] == 0:
+                            slashed[(i,col)] = True
                 
-                d = self.nombre_zero_nonbarrebis(M, barre)
-                if self.indice_min_dico(d, deja_vu) == -1: 
-                    avance = False
+                d = self.unslashed_zero(M, slashed)
+                if self.index_min(d, visited) == -1: 
+                    a = False
                     
-                if len(encadre) == l1 and len(barre) == l2: 
-                    avance = False
-                if len(encadre) == s:
-                    return encadre, True
+                if len(outlined) == l1 and len(slashed) == l2: 
+                    a = False
+                if len(outlined) == s:
+                    return outlined, True
                     
-            return encadre, barre
+        return outlined, slashed
     
     def final_solution(self,result):
-        """
-        Finalizes the solution by adding valid pairs to the list of pairs.
-
-        Parameters
-        ----------
-        result : list of tuple
-            The list of pairs that represent the solution.
-        """
         for ((a,b),(c,d)) in result:
             if self.grid.is_valid_pair(a,b,c,d):
                 self.pairs.append(((a,b),(c,d)))
@@ -707,30 +684,25 @@ class SolverHongrois(Solver):
                 A dictionary of marked columns.
         """
         s = M.shape[0]
-        encadre, barre = self.step1(M)
-        ligne_marquee, colonne_marquee = {}, {}
+        outlined, slashed = self.step1(M)
+        marked_row, marked_col = {}, {}
         for i in range(s):
             n = 0
             for j in range(s):
-                if (i,j) in encadre: # improve ?
+                if (i,j) in outlined:
                     n += 1
             if n == 0: 
-                ligne_marquee[i] = True
-        avance = True
-        while avance:
-            l1,l2 = len(ligne_marquee), len(colonne_marquee)
+                marked_row[i] = True
+        b = True
+        while b:
+            l1,l2 = len(marked_row), len(marked_col)
             for j in range(s):
                 for i in range(s):
-                    if (i,j) in barre and i in ligne_marquee:
-                        colonne_marquee[j] = True
-            
-            #for i in range(s):
-                #for j in range(s):
-                    #if (i,j) in encadre and j in colonne_marquee:
-                            #ligne_marquee[i] = True
-            if len(ligne_marquee) == l1 and len(colonne_marquee) == l2:
-                avance = False
-        return ligne_marquee, colonne_marquee
+                    if (i,j) in slashed and i in marked_row:
+                        marked_col[j] = True
+            if len(marked_row) == l1 and len(marked_col) == l2:
+                b = False
+        return marked_row, marked_col
 
     def step3(self,M):
         """
@@ -741,19 +713,19 @@ class SolverHongrois(Solver):
         M : ndarray
             The cost matrix.
         """
-        ligne_marquee, colonne_marquee = self.step2(M)
+        marked_row, marked_col = self.step2(M)
         s = M.shape[0]
         m = 100000
         for i in range(s):
             for j in range(s):
-                if i in ligne_marquee and j not in colonne_marquee and M[i,j] < m:
+                if i in marked_row and j not in marked_col and M[i,j] < m:
                     m = M[i,j]
 
         for i in range(s):
             for j in range(s):
-                if i in ligne_marquee and j not in colonne_marquee:
+                if i in marked_row and j not in marked_col:
                     M[i,j] -= m
-                if i not in ligne_marquee and j in colonne_marquee:
+                if i not in marked_row and j in marked_col:
                     M[i,j] += m
 
     def run(self):
@@ -765,18 +737,17 @@ class SolverHongrois(Solver):
         """
         M = np.array(self.matrice)
         M_work = np.copy(M)
-        self.initialisationbis(M_work)
+        self.initialisation(M_work)
         while self.step1(M_work)[1] != True:
             self.step3(M_work)
-            print(len(self.step1(M_work)[0]))
-        cellule_encadree = self.step1(M_work)[0]
-        pairs_list = list(cellule_encadree.keys())
+            
+        outlined = self.step1(M_work)[0]
+        pairs_list = list(outlined.keys())
         result = []
 
         for (i,j) in pairs_list:
             result.append(((self.cases_paires[i][0],self.cases_paires[i][1]),(self.cases_impaires[j][0],self.cases_impaires[j][1])))
         self.final_solution(result)
-        
 
 
 class SolverScipy(Solver):#We implement the solver using the linear_sum_assignment function from the scipy library to compare 
