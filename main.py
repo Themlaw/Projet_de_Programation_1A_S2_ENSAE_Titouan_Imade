@@ -2,9 +2,9 @@ from grid import Grid
 from solver import *
 
 data_path = "./input/"
-# file_name = data_path + "grid11.in" 
+file_name = data_path + "grid03.in" 
 
-# g = Grid.grid_from_file(file_name,read_values=True)
+g = Grid.grid_from_file(file_name,read_values=True)
 # #print(g)
 # g.plot()
 
@@ -22,17 +22,23 @@ data_path = "./input/"
 # sf = Solverfinal_bis(g)
 # sf.run()
 # #print((sf.pairs))
-# print("The score of the final Solver is : ", sf.score()) 
+# print("The score of the final Solver is : ", sf.score())
+
+sp = SolverScipy(g)
+sp.run()
+print((sp.pairs))
+print("The score of the final Solver is : ", sp.score())
+g.plot()
 
 all_grid_index = ["00","01","02","03","04","05","11","12","13","14","15","16","17","18","19","21","22","23","24","25","26","27","28","29"]
 #We test all grid with scipy 
-for grid_index in all_grid_index:
-    file_name = data_path + "grid"+grid_index+".in" 
-    g = Grid.grid_from_file(file_name,read_values=True)
-    sp = SolverScipy(g)
-    sp.run()
-    print(grid_index)
-    print("The score of the final Solver for grid"+grid_index+" is : ", sp.score())
+# for grid_index in all_grid_index:
+#     file_name = data_path + "grid"+grid_index+".in" 
+#     g = Grid.grid_from_file(file_name,read_values=True)
+#     sp = SolverScipy(g)
+#     sp.run()
+#     print(grid_index)
+#     print("The score of the final Solver for grid"+grid_index+" is : ", sp.score())
     
 
 
