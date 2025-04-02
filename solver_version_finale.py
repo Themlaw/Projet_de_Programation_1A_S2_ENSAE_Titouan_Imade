@@ -56,14 +56,58 @@ class Solver:
      
 
 class SolverEmpty(Solver):
+    """ 
+    An empty solver that does nothing 
+    """
     def run(self):
+        """
+        A placeholder method for an empty solver, does nothing.
+        """
         pass
 
 
 
 class SolverGreedy(Solver):
+    """
+    A solver class implementing the Greedy algorithm for solving the assignment problem.
 
+    The algorithm iteratively selects the least expensive pair at each step and adds it to the solution.
+    The goal is to minimize the total cost by choosing the least costly pair among the available ones.
+
+    Attributes
+    ----------
+    grid : Grid
+        The grid object containing the value and color data.
+    pairs : list of tuple
+        A list of pairs of cells representing the solution.
+
+    Methods
+    -------
+    remove(pair : tuple, p : list) -> list
+        Removes the specified pair from the list `p`.
+    
+    index_min(l : list) -> int
+        Returns the index of the minimum element in the list `l`.
+    
+    run() -> None
+        Solves the assignment problem using the greedy algorithm by iteratively selecting the least expensive pair.
+    """
     def remove(self, pair : tuple, p : list) -> list: # removes the element pair in the list p 
+        """
+        Removes the element pair in the list p.
+
+        Parameters
+        ----------
+        pair : tuple
+            A tuple of two tuples representing a pair.
+        p : list of tuple
+            List of pairs.
+
+        Returns
+        -------
+        list of tuple
+            The updated list of pairs after removing the given pair.
+        """
         l = []
         (a1,a2) = pair
         for (b1,b2) in p: 
@@ -72,6 +116,19 @@ class SolverGreedy(Solver):
         return l
 
     def index_min(self, l : list) -> int: # returns the index of the minimum of l 
+        """
+        Returns the index of the minimum of l.
+
+        Parameters
+        ----------
+        l : list of int
+            List of integer values.
+
+        Returns
+        -------
+        int
+            Index of the minimum element in l.
+        """
         if l == []:
             return (0,0)
         m,ind=l[0],0
@@ -82,6 +139,11 @@ class SolverGreedy(Solver):
     
 
     def run(self): # solves the grid using the greedy method : at each step, the least expensive pair is chosen 
+        """
+        Solves the grid using the greedy method: at each step, the least expensive pair is chosen.
+
+        This method iteratively finds and removes the least costly pair from the list of all pairs.
+        """
         sol = []
         G = self.grid.all_pairs()
         d = {}
@@ -106,11 +168,82 @@ class SolverGreedy(Solver):
 
 
 class SolverBipart(Solver):
+    """
+    A solver class implementing the Bipartite Matching algorithm.
+
+    This algorithm finds the maximum matching in a bipartite graph using augmenting paths.
+    The graph is represented by pairs of cells in a grid, and the algorithm attempts to match 
+    cells from one set (even-indexed cells) to another set (odd-indexed cells).
+
+    Attributes
+    ----------
+    grid : Grid
+        The grid object containing the value and color data.
+    paires : list of tuple
+        A list of all possible pairs of cells in the grid.
     
+    Methods
+    -------
+    is_even(pair : tuple) -> bool
+        Returns True if the sum of the pair's indices is even, False otherwise.
+    
+    adjacency_dictionary(p : list) -> dict
+        Builds and returns an adjacency dictionary for the given list of pairs.
+    
+    is_free(vertex : tuple, dC : dict) -> bool
+        Returns True if the vertex is free (not part of a matching), otherwise returns False.
+    
+    extended_graph(C : list, G : list) -> dict
+        Returns an extended graph used to find augmenting paths in the matching process.
+    
+    exists_path(G : dict, s : int, p : int, visited : list, path : list) -> list
+        Searches for a path from source `s` to sink `p` in the graph `G`.
+    
+    rev(l : list) -> list
+        Reverses the order of the elements in the given list.
+    
+    edges(path : list) -> list
+        Returns the edges that compose the given path.
+    
+    augmenting_path(C : list, G : list) -> tuple
+        Finds and returns an augmenting path in the extended graph.
+    
+    symmetric_difference(path : list, C : list) -> list
+        Returns the symmetric difference between the path and the current matching `C`.
+    
+    run() -> None
+        Solves the bipartite matching problem by iteratively finding augmenting paths and updating the matching.
+    """
     def is_even(self, pair : tuple) -> bool: # returns True if pair[0] + pair[1] is even or, otherwise, returns False 
+        """
+        Returns True if pair[0] + pair[1] is even, otherwise returns False.
+
+        Parameters
+        ----------
+        pair : tuple
+            A tuple of two integers.
+
+        Returns
+        -------
+        bool
+            True if the sum of pair elements is even, False otherwise.
+        """
         return (  (pair[0] + pair[1]) %2  == 0 )
     
     def adjacency_dictionary(self, p : list) -> dict: # Builds the adjacency dictionary of p
+        """
+        Builds the adjacency dictionary of p.
+
+        Parameters
+        ----------
+        p : list of tuple
+            A list of pairs.
+
+        Returns
+        -------
+        dict
+            A dictionary where keys are pairs and values are lists of adjacent pairs.
+        """
         # d[(i,j)] = list of neighbours of the cell (i,j)
         d = {}
         for (p1,p2) in p: 
@@ -126,9 +259,39 @@ class SolverBipart(Solver):
         return d 
     
     def is_free(self, vertex : tuple, dC : dict) -> bool: # returns True if the vertex is out of C or, otherwise, returns False
+        """
+        Returns True if the vertex is out of C, otherwise returns False.
+
+        Parameters
+        ----------
+        vertex : tuple
+            A tuple representing a vertex.
+        dC : dict
+            A dictionary containing pairs as keys and their neighbours as values.
+
+        Returns
+        -------
+        bool
+            True if the vertex is free, False otherwise.
+        """
         return dC.get(vertex,[]) == []
     
     def extended_graph(self, C : list, G : list) -> dict:# returns an extended graph of G in order to find an augmenting path
+        """
+        Returns an extended graph of G in order to find an augmenting path.
+
+        Parameters
+        ----------
+        C : list of tuple
+            A list of pairs.
+        G : list of tuple
+            A list of all pairs.
+
+        Returns
+        -------
+        dict
+            The extended graph represented as an adjacency dictionary.
+        """
         dC = self.adjacency_dictionary(C)
         s, p = -inf, inf
         dgc = {} 
@@ -167,6 +330,27 @@ class SolverBipart(Solver):
         return dgc                               # dgc is an adjacency dictionary which contains oriented edges and two new vertices (s and p)
    
     def exists_path(self, G: dict, s: int, p: int, visited: list, path :list): # Returns a path from s to p if it exists, otherwise, returns None
+        """
+        Returns a path from s to p if it exists, otherwise returns None.
+
+        Parameters
+        ----------
+        G : dict
+            The graph represented as an adjacency dictionary.
+        s : int
+            The source node.
+        p : int
+            The sink node.
+        visited : list
+            List of visited nodes.
+        path : list
+            The current path.
+
+        Returns
+        -------
+        list
+            A list representing the path from s to p, or an empty list if no path exists.
+        """
         queue = deque([s])
        
         visited = {s: None}
@@ -200,23 +384,80 @@ class SolverBipart(Solver):
 
         #return None  # no paths have been found
         
-    def rev(self, l : list) -> list: # reverses l  
+    def rev(self, l : list) -> list: # reverses l 
+        """
+        Reverses the list l.
+
+        Parameters
+        ----------
+        l : list
+            A list to be reversed.
+
+        Returns
+        -------
+        list
+            The reversed list.
+        """ 
         L = []
         for k in range(len(l)):
             L.append(l[len(l)-1-k])
         return L
 
     def edges(self, path : list) -> list: # returns the edges which compose the path
+        """
+        Returns the edges which compose the path.
+
+        Parameters
+        ----------
+        path : list
+            A list of nodes.
+
+        Returns
+        -------
+        list of tuple
+            A list of edges as tuples (node1, node2).
+        """
         L = []
         for k in range(len(path)-1):
             L.append((path[k], path[k+1]))
         return L
 
     def augmenting_path(self, C : list, G : list) -> tuple[bool, list]: # returns an augmenting_path using the extended graph and its path from s (source) to p (sink)
+        """
+        Returns an augmenting path using the extended graph.
+
+        Parameters
+        ----------
+        C : list of tuple
+            A list of pairs.
+        G : list of tuple
+            A list of all pairs.
+
+        Returns
+        -------
+        tuple
+            A tuple where the first element is a boolean indicating if a path exists,
+            and the second element is the path (list).
+        """
         dgc = self.extended_graph(C, G)
         return self.exists_path(dgc, -inf, inf, [], [])
     
     def symmetric_difference(self, path : list, C : list) -> list : # returns the symmetric difference of path and C which contains the elements that are not shared
+        """
+        Returns the symmetric difference of path and C, which contains the elements that are not shared.
+
+        Parameters
+        ----------
+        path : list
+            A list of edges in the path.
+        C : list of tuple
+            A list of pairs.
+
+        Returns
+        -------
+        list of tuple
+            The symmetric difference of path and C.
+        """
         nC = []
         A = self.edges(path)
         B = C
@@ -233,6 +474,11 @@ class SolverBipart(Solver):
 
 
     def run(self): # Solves the grid using the maximum matching problem approach
+        """
+        Solves the grid using the maximum matching problem approach.
+
+        This method iteratively finds augmenting paths and updates the current matching until no more augmenting paths are found.
+        """
         G = self.grid.all_pairs()
         C = []
         pa = self.augmenting_path(C,G)
@@ -243,230 +489,37 @@ class SolverBipart(Solver):
             if len(C) > 0:
                 print(len(C)) # then the new matching consists of elements which were in the previous matching but not in the path, or elements which were in the path but not in the previous matching. According to the extended graph definition, the cardinality of the new matching is higher than that of the previous one.  
         self.pairs = C
-        
-         
-         
-        
-class Solverfinal_bis(Solver):
+            
+
+class SolverHongrois(Solver):
+    """
+    A solver class implementing the Hungarian algorithm for solving the assignment problem.
+
+    Attributes
+    ----------
+    valeurs : ndarray
+        The grid of values.
+    couleurs : ndarray
+        The grid of colors.
+    cases_paires : list of tuple
+        List of coordinates for the even cells (i + j) % 2 == 0.
+    cases_impaires : list of tuple
+        List of coordinates for the odd cells (i + j) % 2 == 1.
+    paires : list of tuple
+        All pairs of cells in the grid.
+    matrice : ndarray
+        The matrix representing the cost of matching even and odd cells.
+    """
 
     def __init__(self, grid : Grid):
-        super().__init__(grid)
-        n = grid.n 
-        m = grid.m 
+        """
+        Initializes the solver using the Hungarian algorithm.
 
-        self.valeurs=grid.value
-        self.couleurs=grid.color
-
-        self.cases_paires = [(i,j) for i in range(n) for j in range(m) if (i+j)%2==0]
-        self.cases_impaires = [(i,j) for i in range(n) for j in range(m) if (i+j)%2==1]
-
-        self.paires = grid.all_pairs()
-
-        y = len(self.cases_paires)
-        z = len(self.cases_impaires)
-        self.matrice = np.zeros([y,z])     #plus de cases paires qu'impaires
-
-        for ((a,b),(c,d)) in self.paires :
-            if (a+b)%2==0:
-                g = self.valeurs[a][b]
-                h = self.valeurs[c][d]
-                self.matrice[self.cases_paires.index((a,b))][self.cases_impaires.index((c,d))]=abs(g-h)-g-h
-            if (c+d)%2==0:
-                g = self.valeurs[a][b]
-                h = self.valeurs[c][d]
-                self.matrice[self.cases_paires.index((c,d))][self.cases_impaires.index((a,b))]=abs(g-h)-g-h
-
-        self.matrice = self.matrice + abs(np.min(self.matrice))
-        if y>z:
-            self.matrice = np.vstack([self.matrice, np.zeros((y-z,y))])
-            
-    def minimum2(self, l: list) -> int:
-            m, ind = l[0], np.inf
-            for k in range(len(l)):
-                if m > l[k]:
-                    m, ind = l[k], k
-            return m
-    
-    def convertir(self,numero):
-        colonne = numero % self.grid.m
-        ligne = numero // self.grid.m
-        return ligne, colonne
-
-    
-    def initialisation(self,M):
-        infini = float("inf")
-        s = M.shape[0]
-        min_ligne = [self.minimum2(M[i, :]) for i in range(s)]
-        for i in range(s):
-            if min_ligne[i]<infini:
-                M[i, :] -= min_ligne[i]
-        s = M.shape[1]
-        min_colonne = [self.minimum2(M[:, j]) for j in range(s)]
-        for j in range(s):
-            if min_colonne[j]<infini:
-                M[:, j] -= min_colonne[j]
-
-    def nombre_zero_barre(self,M, barre):
-            d = {}
-            s = M.shape[0]
-            for i in range(s):
-                n = 0
-                for j in range(s):
-                    if M[i,j] == 0 and not barre.get((i,j), False):
-                        n += 1
-                d[i] = n
-            return d 
-
-    def minimu(self,d, deja_vu):
-        m, i = inf,-1
-        for (k,v) in d.items() :
-            if v < m and v > 0 and k not in deja_vu:
-                m, i = v, k
-        return i
-
-
-     
-
-    def etape1(self,M, cellule_barre, cellule_encadree):
-        s = M.shape[0]
-        avance = True
-        deja_vu = []
-        while avance: 
-            avance = False
-            d = self.nombre_zero_barre(M, cellule_barre)
-            ligne = self.minimu(d, deja_vu)
-            deja_vu.append(ligne)
-            col = None
-            b = False
-            for j in range(s):
-                if M[ligne, j] == 0 and not b and not cellule_barre.get((ligne,j), False): # à améliore
-                    cellule_encadree[(ligne,j)] = True
-                    b = True
-                    avance = True
-                    col = j 
-            if col != None: # ie on a trouvé
-                for j in range(s): 
-                    if M[ligne,j] == 0:
-                        if j != col: 
-                            cellule_barre[(ligne,j)] = True
-            if col != None:
-                for i in range(s):
-                    if M[i,col] == 0: 
-                        if i != ligne:
-                            avance = True
-                            cellule_barre[(i,col)] = True
-            d = self.nombre_zero_barre(M, cellule_barre)
-            if self.minimu(d, deja_vu) == -1: 
-                avance = False 
-        if len(cellule_encadree) == s:
-            return cellule_encadree, True # ie un par ligne/colonne         
-        return  cellule_encadree, cellule_barre
-
-    
-    
-    
-
-    
-    def etape2(self,M, cellule_encadree, cellule_barre):
-        s = M.shape[0]
-        ligne_croix = {}
-        colonne_croix = {}
-        avance = True
-        r = 0
-        for i in range(s):
-                n = 0
-                for j in range(s):
-                    if cellule_encadree.get((i,j), False):
-                        n += 1
-                if n == 0:
-                    if not ligne_croix.get(i, False):
-                        ligne_croix[i] = True # mettre croix sur ligne aucun zero encadre
-                        avance = True
-
-        while avance and r < 5:  
-            avance = False
-            for j in range(s):
-                for i in range(s):
-                    if ligne_croix.get(i, False) and cellule_barre.get((i,j), False) and j not in colonne_croix:
-                            
-                            colonne_croix[j] = True # mettre croix sur colonne où zero barre sur ligne crois
-                            avance = True
-            for i in range(s):
-                for j in range(s):
-                    if colonne_croix.get(j,False) and cellule_encadree.get((i,j), False) and i not in ligne_croix:
-                        
-                        ligne_croix[i] = True # mettre croix sur ligne ou zero encadre sur colonne marquee
-                        avance = True
-            r += 1
-        return ligne_croix, colonne_croix
-        
-
-
-    def etape3(self, M, ligne_croix, colonne_croix):
-        s = M.shape[0]
-        m = 10000 
-        for i in range(s): 
-            for j in range(s):
-                if ligne_croix.get(i, False) and not colonne_croix.get(j, False) and M[i,j] < m : # cellules non traversées par un trait, on cherche le min
-                    m = M[i,j]
-        
-        for i in range(s):
-            for j in range(s):
-                if ligne_croix.get(i,False) and not colonne_croix.get(j, False): # soustrait pour ces cases
-                    M[i,j] -= m
-                if not ligne_croix.get(i,False) and colonne_croix.get(j, False): # plus pour celles traversées 2 fois(ie ligne et colonne croix)
-                    M[i,j] += m
-
-    def valeur_affectation(self,M, cellule_encadree):
-        s = 0
-        l = []
-        for (i,j) in cellule_encadree.keys(): 
-            
-            if (i,j) not in l and (j,i) not in l:
-                s += M[i,j]
-                print("s_value", s, i, j)
-                l.append((i,j))
-               
-        return s, l
-
-
-    def final_solution(self,result):
-        for ((a,b),(c,d)) in result:
-            if self.grid.is_valid_pair(a,b,c,d):
-                self.pairs.append(((a,b),(c,d)))
-
-   
-    def run(self):
-            M = np.array(self.matrice)
-            M_work = np.copy(M)
-            self.initialisation(M_work)
-            cellule_encadree, cellule_barre = self.etape1(M_work,{},{})
-
-            while cellule_barre != True  :
-                cellule_encadree, cellule_barre =  self.etape1(M_work,{},{})
-                ligne_croix, colonne_croix =  self.etape2(M_work, cellule_encadree, cellule_barre)
-                self.etape3(M_work, ligne_croix, colonne_croix)
-                
-            cellule_encadree, cellule_barre =  self.etape1(M_work,{},{})  
-            ligne_croix, colonne_croix =  self.etape2(M_work, cellule_encadree, cellule_barre)
-            self.etape3(M_work, ligne_croix, colonne_croix)
-            
-            pairs_list = list(cellule_encadree.keys())
-            result = []
-            for (i,j) in pairs_list:
-                result.append(((self.cases_paires[i][0],self.cases_paires[i][1]),(self.cases_impaires[j][0],self.cases_impaires[j][1])))
-            self.final_solution(result)
-            
-            # lignes, colonnes = linear_sum_assignment(M)
-            # self.pairs = list([(self.cases_paires[lignes[i]],self.cases_impaires[colonnes[i]]) for i in range(len(lignes))])
-            # print(s.score2())
-
-    ###########################################
-    
-
-class Solver_final_final(Solver):
-
-    def __init__(self, grid : Grid):
+        Parameters
+        ----------
+        grid : Grid
+            The grid object containing the value and color data.
+        """
         super().__init__(grid)
         n = grid.n 
         m = grid.m 
@@ -499,14 +552,37 @@ class Solver_final_final(Solver):
             
 
     def initialisationbis(self,M):
-            row_min = np.min(M, axis=1)
-            M -= row_min[:, np.newaxis]
-            col_min = np.min(M, axis=0)
-            M -= col_min
+        """
+        Performs the initialization step for the Hungarian algorithm.
+
+        Parameters
+        ----------
+        M : ndarray
+            The matrix to be initialized by subtracting the row and column minima.
+        """
+        row_min = np.min(M, axis=1)
+        M -= row_min[:, np.newaxis]
+        col_min = np.min(M, axis=0)
+        M -= col_min
             
             
 
     def nombre_zero_nonbarrebis(self, M, barre): 
+            """
+            Returns a dictionary with the number of zero entries per row that are not blocked.
+
+            Parameters
+            ----------
+            M : ndarray
+                The cost matrix.
+            barre : dict
+                A dictionary indicating blocked cells.
+
+            Returns
+            -------
+            dict
+                A dictionary with row indices as keys and the count of zeros as values.
+            """
             s = M.shape[0]
             d = {}
             for i in range(s):
@@ -521,6 +597,21 @@ class Solver_final_final(Solver):
             return d 
     
     def indice_min_dico(self, d, deja_vu): 
+            """
+            Returns the index of the minimum value from the dictionary that has not been visited.
+
+            Parameters
+            ----------
+            d : dict
+                A dictionary of row indices and zero counts.
+            deja_vu : list
+                A list of visited row indices.
+
+            Returns
+            -------
+            int
+                The index of the row with the minimum zero count.
+            """
             m, i = 10000, -1
             for (key,value) in d.items():
                 if value < m and key not in deja_vu:
@@ -528,6 +619,23 @@ class Solver_final_final(Solver):
             return i 
 
     def step1(self,M):
+            """
+            Executes the first step of the Hungarian algorithm.
+
+            Parameters
+            ----------
+            M : ndarray
+                The cost matrix.
+
+            Returns
+            -------
+            tuple
+                A tuple containing two elements:
+                - encadre : dict
+                    A dictionary of marked cells.
+                - barre : dict
+                    A dictionary of blocked cells.
+            """
             barre = {}
             s = M.shape[0]
             encadre = {}
@@ -568,11 +676,36 @@ class Solver_final_final(Solver):
             return encadre, barre
     
     def final_solution(self,result):
+        """
+        Finalizes the solution by adding valid pairs to the list of pairs.
+
+        Parameters
+        ----------
+        result : list of tuple
+            The list of pairs that represent the solution.
+        """
         for ((a,b),(c,d)) in result:
             if self.grid.is_valid_pair(a,b,c,d):
                 self.pairs.append(((a,b),(c,d)))
     
     def step2(self,M):
+        """
+        Executes the second step of the Hungarian algorithm.
+
+        Parameters
+        ----------
+        M : ndarray
+            The cost matrix.
+
+        Returns
+        -------
+        tuple
+            A tuple containing two dictionaries:
+            - ligne_marquee : dict
+                A dictionary of marked rows.
+            - colonne_marquee : dict
+                A dictionary of marked columns.
+        """
         s = M.shape[0]
         encadre, barre = self.step1(M)
         ligne_marquee, colonne_marquee = {}, {}
@@ -600,6 +733,14 @@ class Solver_final_final(Solver):
         return ligne_marquee, colonne_marquee
 
     def step3(self,M):
+        """
+        Executes the third step of the Hungarian algorithm.
+
+        Parameters
+        ----------
+        M : ndarray
+            The cost matrix.
+        """
         ligne_marquee, colonne_marquee = self.step2(M)
         s = M.shape[0]
         m = 100000
@@ -616,6 +757,12 @@ class Solver_final_final(Solver):
                     M[i,j] += m
 
     def run(self):
+        """
+        Solves the assignment problem using the Hungarian algorithm.
+
+        The method performs the necessary steps to compute the optimal assignment, 
+        including matrix initialization and applying the Hungarian algorithm steps iteratively.
+        """
         M = np.array(self.matrice)
         M_work = np.copy(M)
         self.initialisationbis(M_work)
@@ -633,7 +780,33 @@ class Solver_final_final(Solver):
 
 
 class SolverScipy(Solver):#We implement the solver using the linear_sum_assignment function from the scipy library to compare 
+    """
+    A solver class using the SciPy library's linear_sum_assignment function for solving the assignment problem.
+
+    Attributes
+    ----------
+    valeurs : ndarray
+        The grid of values.
+    couleurs : ndarray
+        The grid of colors.
+    cases_paires : list of tuple
+        List of coordinates for the even cells (i + j) % 2 == 0.
+    cases_impaires : list of tuple
+        List of coordinates for the odd cells (i + j) % 2 == 1.
+    paires : list of tuple
+        All pairs of cells in the grid.
+    matrice : ndarray
+        The matrix representing the cost of matching even and odd cells.
+    """
     def __init__(self, grid : Grid):
+        """
+        Initializes the solver using the SciPy linear sum assignment.
+
+        Parameters
+        ----------
+        grid : Grid
+            The grid object containing the value and color data.
+        """
         super().__init__(grid)
         n = grid.n 
         m = grid.m 
@@ -665,11 +838,25 @@ class SolverScipy(Solver):#We implement the solver using the linear_sum_assignme
             self.matrice = np.vstack([self.matrice, np.zeros((y-z,y))])
             
     def final_solution(self,result):
+        """
+        Finalizes the solution by adding valid pairs to the list of pairs.
+
+        Parameters
+        ----------
+        result : list of tuple
+            The list of pairs that represent the solution.
+        """
         for ((a,b),(c,d)) in result:
             if self.grid.is_valid_pair(a,b,c,d):
                 self.pairs.append(((a,b),(c,d)))
                 
     def run(self):
+        """
+        Solves the assignment problem using the SciPy linear_sum_assignment function.
+
+        The method computes the optimal assignment by solving the linear sum assignment problem 
+        using the scipy.optimize.linear_sum_assignment function.
+        """
         M = np.array(self.matrice)
         lignes, colonnes = linear_sum_assignment(M)
         result = list([(self.cases_paires[lignes[i]],self.cases_impaires[colonnes[i]]) for i in range(len(lignes))])
