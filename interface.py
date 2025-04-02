@@ -9,7 +9,94 @@ from typing import Union
 
 
 class PygameGame():
+    r"""
+    A base class for creating Pygame-based grid games with interactive features.
+    This class provides the fundamental structure for the grid game, including
+    display management, user interaction handling, and game state tracking. It defines basic
+    features like cell selection, solution display, and grid menu navigation.
+    
+    Parameters
+    ----------
+    None
+
+    Attributes
+    ----------
+    grid : Grid
+        A grid object representing the game board check the documentation of the grid class for more details, 
+        it is initialized with a 3x4 grid to handle feature necessary before choosing a grid but this grid is not used in the game
+    solver : SolverScipy
+        Solver object for computing solutions to the grid game check the documentation of the solver class for more details,
+        by default it used the scipy linear sum assignment solver to function because it is the more efficient 
+    cell_size : int
+        Size of each cell in pixels by default it is set at 100 but this value is dynamically changed to match the size of the window
+    width : int
+        Total width of the game window including borders
+    height : int
+        Total height of the game window including borders
+    border : int
+        Border size around the grid to allow for UI elements and spacing
+    running : bool
+        Flag indicating if the game is running, if false the game is closed
+    colors : list of tuple
+        RGB color tuples for cell coloring
+    screen : pygame.Surface
+        Main game display surface
+    text_font : pygame.font.Font
+        Font for general text display like the UI
+    cell_font : pygame.font.Font
+        Font for cell numbers
+    clicked_cells : list of tuple
+        Currently selected cells for linking
+    linked_cells : set of tuple of tuple
+        Pairs of all the cells that are currenly connected in the game
+    used_cells : set of tuple
+        All cells that are currently used in connections
+    time_start_event : float
+        Timestamp for event timing when we want to display a message for a certain time
+    text_event : str
+        Current event text to display
+    buttons : dict of list of *args 
+        Storage for current UI button objects and their functions
+    grid_menu : bool
+        Flag indicating if main menu is displayed to switch between the grid menu and the game
+    solution_displayed : bool
+        Flag indicating if solution is visible to prevent multiple displays and calculation of the solution
+    scroll_offset : int
+        Current vertical scroll position
+    max_scroll : int
+        Maximum scroll limit
+        
+    Methods
+    -------
+    adjust_for_resize()
+        Adjusts display elements for window resizing
+    draw_grid()
+        Renders the game grid with their colors, values and coordinates
+    draw_event_text(center_position)
+        Displays event text at specified position
+    draw_score(position, list_of_pairs, score_text=None)
+        Draw the score at the position given associated with the list of pairs given
+    draw_line_between_cells(list_pair, color=(0,0,0))
+        Draws lines betxeen all connected paired cells
+    draw_main_menu_buttons()
+        Renders all the buttons in the main menu and in the game
+    score(pairs)
+        Calculates score for a given list of pairs depending on the grid
+    Notes
+    -----
+    The game window is resizable and includes scrollable menus for grid selection.
+    Coordinates use (row, column) format for grid navigation.
+    This class serves as the foundation for a Pygame-based game with a grid system. It initializes all necessary
+    components for the game including the grid, display settings, and interaction tracking.
+    Somme methods used in the base class are not implemented and must be implemented in the child class
+    """
     def __init__(self):
+        r"""
+        Initialize the base PygameGame class with grid, solver, display settings and game state variables.
+
+        Creates a 3x4 grid and initializes display settings like colors, fonts, window size etc.
+        Also sets up data structures to track clicked cells, linked cells and game state.
+        """
         self.grid = Grid(3,4)
         self.solver = SolverScipy(self.grid)
         self.cell_size = 100
@@ -43,6 +130,12 @@ class PygameGame():
         self.all_grid_index = ["00","01","02","03","04","05","11","12","13","14","15","16","17","18","19","21","22","23","24","25","26","27","28","29"]
 
     def adjust_for_resize(self):
+        r"""Adjust the display elements for window resizing.
+
+        This method recalculates the cell size, button sizes, font sizes, 
+        and other UI elements to accommodate a resized window.
+        """
+
         self.cell_size = min((self.width - 2*self.border)//self.grid.m,
                             (self.height - 2*self.border)//self.grid.n)
         self.button_width = self.width // 2
@@ -55,6 +148,13 @@ class PygameGame():
         self.text_font = pygame.font.SysFont('Arial', max(12, min(50, text_font_size)))
 
     def draw_grid(self):
+        r"""Render the game grid on the screen.
+
+        This method draws the grid cells, their values, and their coordinates.
+        Each cell's color is determined by the grid's color attribute, and 
+        cell values are displayed at the center of each cell.
+        """
+
         self.screen.fill((255, 255, 255))
         
         # Draw grid rectangles and values
@@ -79,8 +179,18 @@ class PygameGame():
             text = self.cell_font.render(str(j), True, (0, 0, 0))
             self.screen.blit(text, (self.border + j * self.cell_size + self.cell_size // 3, self.border//3))
     
-    def draw_event_text(self, center_position):
-        #Draw the event text on the bottom of the screen
+    def draw_event_text(self, center_position : tuple[int,int]):
+        r"""Display event text at the specified position on the screen.
+
+        This method shows the event message stored in self.text_event at the
+        provided center_position. The message is cleared after 1 second.
+
+        Parameters
+        ----------
+        center_position : tuple of int
+            The (x, y) coordinates where the event text should be displayed.
+        """
+
         if self.text_event is not None:
             text = self.text_font.render(self.text_event, True, (0, 0, 0))
             text_rect = text.get_rect(center=center_position)
@@ -89,7 +199,23 @@ class PygameGame():
                 self.text_event = None
                 self.time_start_event = None
 
-    def draw_score(self, position, list_of_pairs, score_text = None):
+    def draw_score(self, position : tuple[int,int], list_of_pairs : list[tuple[int,int]], score_text : Union[None,str] = None):
+        r"""Draw the score on the screen at the specified position.
+
+        This method calculates the score based on the list of pairs and 
+        draws the score text at the specified position on the screen. If 
+        `score_text` is provided, it is displayed as a prefix to the score.
+
+        Parameters
+        ----------
+        position : tuple of int
+            The (x, y) coordinates where the score should be displayed.
+        list_of_pairs : list of tuple
+            The list of pairs that make up the current solution.
+        score_text : str, optional
+            An optional prefix text to display before the score.
+        """
+
         #Draw score on the bottom left of the screen
         score = self.score(list_of_pairs)
         if score_text is None:
@@ -98,16 +224,39 @@ class PygameGame():
             text = self.text_font.render(score_text+str(score), True, (0, 0, 0))
         self.screen.blit(text, position) #(self.border//2, self.height - self.border+20)
 
-    def draw_line_between_cells(self, list_pair, color =(0, 0, 0)):
+    def draw_line_between_cells(self, list_pair : list[tuple[tuple[int,int],tuple[int,int]]], color =(0, 0, 0)):
+        r"""Draw lines between pairs of cells on the grid.
+
+        This method draws lines between the pairs of cells in list_pair.
+        Optionally, the color of the lines can be customized.
+
+        Parameters
+        ----------
+        list_pair : list of tuple of tuple of int
+            The list of pairs of cell coordinates (each pair consisting of two tuples).
+        color : tuple of int, optional
+            The RGB color of the lines (default is black).
+
+        """
+
         for (i1, j1), (i2, j2) in list_pair:
             pygame.draw.line(self.screen, color, 
                              (j1 * self.cell_size + self.border + self.cell_size // 2, i1 * self.cell_size + self.border + self.cell_size // 2), 
                              (j2 * self.cell_size + self.border + self.cell_size // 2, i2 * self.cell_size + self.border + self.cell_size // 2), 5)
 
     def drawn_all(self):
-        pass # We draw everything in the child class
+        r"""Draw all elements on the screen.
+        This method is a placeholder and should be implemented in subclasses."""
+        
+        pass
 
     def draw_main_menu_buttons(self):
+        r"""Draw the main menu buttons.
+
+        This method renders the buttons in the main menu. Each button is
+        assigned a function, store in the self.buttons dictionnary and is finally drawn on the screen.
+        """
+
         self.buttons = {}
         y_pos = self.scroll_offset
         colors = [(255, 255, 200),  (255, 250, 190), (255, 245, 180), (255, 240, 170), (255, 235, 160), (255, 230, 150), (255, 225, 140), (255, 220, 130), 
@@ -139,16 +288,37 @@ class PygameGame():
         self.buttons["menu_button"] = [menu_button, self.quit_game_button, None]
 
     def draw_scrollbar(self):
+        r"""Draw the scrollbar in the menu.
+
+        This method calculates and draws a vertical scrollbar based on the
+        current scroll offset and the total number of menu items.
+        """
+
         # Calculer la hauteur de la barre de défilement
         scrollbar_height = self.height * (self.height / (len(self.buttons) * self.button_height))
         scrollbar_pos_y = -self.scroll_offset * (self.height / (len(self.buttons) * self.button_height))
         # Dessiner la barre de défilement à droite
         pygame.draw.rect(self.screen, (100, 100, 100), (self.width - self.scrollbar_width, scrollbar_pos_y, self.scrollbar_width, scrollbar_height))
 
-    def score(self, pairs) -> int: # We want to minimize the score
+    def score(self, pairs : list[tuple[int,int]]) -> int: # We want to minimize the score
+        r"""Calculate the score for a given list of pairs.
+
+        This method calculates the score by summing the cost of each valid pair, 
+        defined as the absolute difference between their values, and the value of
+        all unlinked cells in the grid. The score is minimized
+        to encourage the optimal selection of pairs.
+
+        Parameters
+        ----------
+        pairs : list of tuple
+            The list of pairs that make up the current solution.
+
+        Returns
+        -------
+        int
+            The total score for the given list of pairs.
         """
-        Computes of the list of pairs in self.pairs
-        """
+
         score = 0
         color_grid = deepcopy(self.grid.color)
         
@@ -169,28 +339,63 @@ class PygameGame():
     
 
     def quit_game_button(self):
-            self.running = False
+        r"""Quit the game.
+
+        This method sets the running flag to False, stopping the game loop
+        and quitting the game.
+        """
+
+        self.running = False
 
     def reset_grid(self):
+        r"""Reset the grid to its initial state.
+
+        This method clears the clicked cells, linked cells, and used cells,
+        and sets the solution_displayed flag to False, resetting the game state.
+        """
+
         self.clicked_cells.clear()
         self.linked_cells.clear()
         self.used_cells.clear()
         self.solution_displayed = False
 
-    def clear_button(self,**kwargs):
+    def clear_button(self):
+        r"""Reset the game and display a "Reset" event message.
+
+        This method clears the game state and displays the "Reset" event message
+        at the bottom of the screen.
+        """
+
         self.reset_grid()
         self.time_start_event = pygame.time.get_ticks()
         self.text_event = "Reset"
     
 
-    def switch_to_grid_button(self,grid_index,**kwargs):
+    def switch_to_grid_button(self,grid_index : str):
+        r"""Switch the grid to a new one based on the selected index.
+
+        This method loads a grid from a file based on the given grid_index, 
+        updates the solver, and switches from the main menu to the selected grid.
+
+        Parameters
+        ----------
+        grid_index : str
+            The index of the grid to load (e.g., "00", "01", etc.).
+        """
+
         self.grid = Grid.grid_from_file("./input/grid"+grid_index+".in", read_values=True)
         self.solver = SolverScipy(self.grid)
         self.grid_menu = False
         self.adjust_for_resize()
         self.clicked_cells.clear()
     
-    def show_solution_button(self,**kwargs):
+    def show_solution_button(self):
+        r"""Show the solution for the current grid.
+
+        This method computes and displays the solution for the current grid 
+        using the solver. It also clears any existing linked and used cells.
+        """
+
         if self.solution_displayed:
             self.time_start_event = pygame.time.get_ticks()
             self.text_event = "Solution already displayed"
@@ -212,6 +417,13 @@ class PygameGame():
 
 
     def menu_button(self):
+        r"""Display a confirmation message before quitting the game.
+
+        This method shows a dialog box asking if the user is sure they want to quit
+        the game. If the user confirms, it returns to the main menu and resets the 
+        game state.
+        """
+
         answer = messagebox.askquestion("Quit Game", "Are you sure you want to quit, all unsave progress will be reset")
         if answer == "yes":
             self.grid_menu = True
@@ -224,7 +436,19 @@ class PygameGame():
             self.used_cells.clear()
             self.solution_displayed = False
             
-    def is_finished(self):#Check if the game is finished
+    def is_finished(self) -> bool: 
+        r"""Check if the game is finished.
+
+        This method checks if all cells have been used in valid pairs, indicating
+        that the game has been completed. It returns True if the game is finished,
+        and False otherwise.
+
+        Returns
+        -------
+        bool
+            True if the game is finished, False otherwise.
+        """
+
         finished = True
         for i in range(self.grid.n):
             for j in range(self.grid.m):
@@ -241,11 +465,24 @@ class PygameGame():
      
 
 class PygameSoloGame(PygameGame):
+    
     def __init__(self):
         super().__init__()
 
 
-    def handle_cell_click(self, pos):
+    def handle_cell_click(self, pos : tuple[int,int]):
+        r"""Handle a cell click event.
+
+        This method processes the user's click on the grid, updating the clicked 
+        cells, linking valid pairs, and handling invalid selections or already used cells.
+
+        Parameters
+        ----------
+        pos : tuple of int
+            The (x, y) coordinates of the mouse click.
+
+        """
+
         x, y = pos
         col = (x - self.border) // self.cell_size
         row = (y - self.border) // self.cell_size
@@ -288,6 +525,13 @@ class PygameSoloGame(PygameGame):
             self.clicked_cells.clear()
 
     def draw_buttons(self):
+        r"""Draw the game action buttons.
+
+        This method renders the action buttons like "Reset", "Show solution", 
+        and "Menu" in the game view and adjusts their positions based on 
+        screen size.
+        """
+
         if self.grid_menu:
             self.draw_main_menu_buttons()
         
@@ -337,6 +581,11 @@ class PygameSoloGame(PygameGame):
             self.buttons["menu_button"] = [menu_button, self.menu_button, None]
     
     def draw_all(self):
+        r"""Draw the entire game state.
+
+        This method linked all the drawing component in one drawing function
+        """
+
         self.draw_grid()
         self.draw_line_between_cells(self.linked_cells)
         self.draw_buttons()
@@ -344,6 +593,14 @@ class PygameSoloGame(PygameGame):
         self.draw_score((self.border//2, self.height - self.border+20), self.linked_cells)
 
     def run(self):
+        r"""Run the game loop.
+
+        This is the mainloop of the game. Every frame of running, we check for pygame event such as 
+        mouse click, window resize, etc. and call the appropriate function. We also draw the game elements
+        such as the grid, buttons, and event text depending on the current state of the game.
+
+        """
+
         self.draw_buttons()
         self.adjust_for_resize()
         while self.running:
@@ -465,7 +722,22 @@ class PygameTwoPlayerGame(PygameGame):
         self.draw_score((self.border//2, self.height - self.border), self.player0_pairs, score_text="Score of player 0 : ")
         self.draw_score((self.border//2, self.height - self.border+40), self.player1_pairs, score_text="Score of player 1 : ")
 
-    def end_current_game(self, list_of_pairs: list, player: Union[int, None] = 0, text_to_print: Union[str, None] = None):
+    def end_current_game(self, list_of_pairs: list[tuple[int,int]], player: Union[int, None] = 0, text_to_print: Union[str, None] = None):
+        r"""End the current game and display the result.
+
+        This method ends the game, displays the winner or a draw message, and 
+        provides options to either start a new game or return to the main menu.
+
+        Parameters
+        ----------
+        list_of_pairs : list of tuple of int
+            The list of pairs that make up the current solution.
+        player : int, optional
+            The index of the player who forfeited the game (default is 0).
+        text_to_print : str, optional
+            Custom message to display at the end of the game (default is None).
+        """
+
         if text_to_print is None:
             text_to_print = f"Player {player} forfeits the game, the player {1-player} wins with a score of {self.score(list_of_pairs)}"
         # Wait for button click
@@ -729,6 +1001,12 @@ class GameMenu:
             self.master.quit()
     
     def mainloop(self):
+        r"""Start the Tkinter main loop for the game menu.
+
+        This method starts the Tkinter main loop to display the game menu and
+        allow user interaction with it.
+        """
+
         self.build_main_menu()
         self.master.mainloop()
 
