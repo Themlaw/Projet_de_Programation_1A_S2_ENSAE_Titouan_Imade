@@ -328,7 +328,26 @@ class SolverBipart(Solver):
                 else:                           # same if vertex1 is odd
                     dgc[vertex2].append(vertex1)
         return dgc                               # dgc is an adjacency dictionary which contains oriented edges and two new vertices (s and p)
-   
+
+    def rev(self, l : list) -> list: # reverses l 
+        """
+        Reverses the list l.
+
+        Parameters
+        ----------
+        l : list
+            A list to be reversed.
+
+        Returns
+        -------
+        list
+            The reversed list.
+        """ 
+        L = []
+        for k in range(len(l)):
+            L.append(l[len(l)-1-k])
+        return L
+        
     def exists_path(self, G: dict, s: int, p: int, visited: list, path :list): # Returns a path from s to p if it exists, otherwise, returns None
         """
         Returns a path from s to p if it exists, otherwise returns None.
@@ -352,11 +371,10 @@ class SolverBipart(Solver):
             A list representing the path from s to p, or an empty list if no path exists.
         """
         queue = deque([s])
-       
         visited = {s: None}
         while queue:
             u = queue.popleft()
-            if u in G: #listes des sommets adj
+            if u in G: # listes des sommets adj
                 for v in G[u]: 
                     if v not in visited:
                         visited[v] = u
@@ -366,42 +384,10 @@ class SolverBipart(Solver):
                             while v != None:
                                 path.append(v) 
                                 v = visited[v]
-                            return list(reversed(path))
+                            return list(rev(path))
         return []
-
-       
-        #if s == p:
-           # path.append(s)
-            #return self.rev(path)  # we have finished
-
-        #visited.append(s)
-        #for neighbour in G[s]:
-            #if neighbour not in visited:
-                #found = self.exists_path(G, neighbour, p, visited, path)
-                #if found is not None:
-                    #path.append(s)  # there is a path from this neighbour to p (because fond is not None) so s is added to the final path
-                    #return self.rev(path)  # path must be reversed because we added in the wrong sense
-
-        #return None  # no paths have been found
         
-    def rev(self, l : list) -> list: # reverses l 
-        """
-        Reverses the list l.
-
-        Parameters
-        ----------
-        l : list
-            A list to be reversed.
-
-        Returns
-        -------
-        list
-            The reversed list.
-        """ 
-        L = []
-        for k in range(len(l)):
-            L.append(l[len(l)-1-k])
-        return L
+    
 
     def edges(self, path : list) -> list: # returns the edges which compose the path
         """
@@ -567,7 +553,7 @@ class SolverHongrois(Solver):
             
             
 
-    def nombre_zero_nonbarrebis(self, M, barre): 
+    def unslashed_zero(self, M, barre): 
             """
             Returns a dictionary with the number of zero entries per row that are not blocked.
 
@@ -596,7 +582,7 @@ class SolverHongrois(Solver):
                         d[i] = n
             return d 
     
-    def indice_min_dico(self, d, deja_vu): 
+    def index_min(self, d, deja_vu): 
             """
             Returns the index of the minimum value from the dictionary that has not been visited.
 
@@ -636,44 +622,42 @@ class SolverHongrois(Solver):
                 - barre : dict
                     A dictionary of blocked cells.
             """
-            barre = {}
+            slashed = {}
             s = M.shape[0]
-            encadre = {}
-            deja_vu = []
-            avance = True 
-            while avance : 
-                l1, l2 = len(encadre), len(barre)
-                d = self.nombre_zero_nonbarrebis(M, barre)
-                ligne = self.indice_min_dico(d, deja_vu)
-                deja_vu.append(ligne)
-                
+            outlined = {}
+            visited = []
+            b = True 
+            while b : 
+                l1, l2 = len(outlined), len(slashed)
+                d = self.unslashed_zero(M, slashed)
+                row = self.index_min(d, visited)
+                visited.append(ligne)
                 b = False
                 col = -1
                 for j in range(s):
-                    if M[ligne,j] == 0 and (ligne,j) not in barre and not b : 
-                        encadre[(ligne, j)] = True
+                    if M[row,j] == 0 and (row,j) not in slashed and not b : 
+                        outlined[(row, j)] = True
                         b = True
                         col = j
-                        
                 if b: 
                     for j in range(s):
-                        if j != col and M[ligne,j] == 0:
-                            barre[(ligne,j)] = True
+                        if j != col and M[row,j] == 0:
+                            slashed[(row,j)] = True
                             
                     for i in range(s):
-                        if i != ligne and M[i,col] == 0:
-                            barre[(i,col)] = True
+                        if i != row and M[i,col] == 0:
+                            slashed[(i,col)] = True
                 
-                d = self.nombre_zero_nonbarrebis(M, barre)
-                if self.indice_min_dico(d, deja_vu) == -1: 
-                    avance = False
+                d = self.unslashed_zero(M, barre)
+                if self.index_min(d, deja_vu) == -1: 
+                    b = False
                     
-                if len(encadre) == l1 and len(barre) == l2: 
-                    avance = False
-                if len(encadre) == s:
-                    return encadre, True
+                if len(outlined) == l1 and len(slashed) == l2: 
+                    b = False
+                if len(outlined) == s:
+                    return outlined, True
                     
-            return encadre, barre
+            return outlined, slashed
     
     def final_solution(self,result):
         """
