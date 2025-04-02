@@ -1,34 +1,6 @@
-from grid import Grid
-from solver_version_finale import *
-import time
+from interface import GameMenu
 
-data_path = "./input/"
-file_name = data_path + "grid03.in" 
-
-g = Grid.grid_from_file(file_name,read_values=True)
-# #print(g)
-# g.plot()
-
-
-# sg = SolverGreedy(g)
-# sg.run()
-# #print((sg.pairs))
-# print("The score of the Greedy Solver is : ", sg.score()) # For the grid4, the score of this methode is higher than the score of the Bipart Solver. In fact, the Greedy solver is only locally optimal (at each step, the least expensive pair is chosen) but not globally optimal.
-
-# sb = SolverBipart(g)
-# sb.run()
-# #print((sb.pairs))
-# print("The score of the Bipart Solver is : ", sb.score())
-
-# sf = Solverfinal_bis(g)
-# sf.run()
-# #print((sf.pairs))
-# print("The score of the final Solver is : ", sf.score())
-
-    # sp = SolverScipy(g)
-    # sp.run()
-    # print((sp.pairs))
-    # print("The score of the final Solver is : ", sp.score())
-    # g.plot()
+menu = GameMenu()
+menu.mainloop()
 
 
