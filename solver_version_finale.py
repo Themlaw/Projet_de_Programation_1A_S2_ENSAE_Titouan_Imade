@@ -474,7 +474,6 @@ class SolverBipart(Solver):
             pa =  self.augmenting_path(C,G)  # then the new matching consists of elements which were in the previous matching but not in the path, or elements which were in the path but not in the previous matching. According to the extended graph definition, the cardinality of the new matching is higher than that of the previous one.  
         self.pairs = C
             
-
 class SolverHungarian(Solver):
     """
     A solver class implementing the Hungarian algorithm for solving the assignment problem.
@@ -495,7 +494,7 @@ class SolverHungarian(Solver):
         The matrix representing the cost of matching even and odd cells.
     """
 
-    def __init__(self, grid : Grid):
+    def __init__(self, grid: Grid):
         """
         Initializes the solver using the Hungarian algorithm.
 
@@ -508,34 +507,41 @@ class SolverHungarian(Solver):
         n = grid.n 
         m = grid.m 
 
-        self.valeurs=grid.value
-        self.couleurs=grid.color
+        # Initialize the value and color grids from the input grid
+        self.valeurs = grid.value
+        self.couleurs = grid.color
 
-        self.cases_paires = [(i,j) for i in range(n) for j in range(m) if (i+j)%2==0]
-        self.cases_impaires = [(i,j) for i in range(n) for j in range(m) if (i+j)%2==1]
+        # Identify even and odd cells based on (i + j) % 2
+        self.cases_paires = [(i,j) for i in range(n) for j in range(m) if (i+j)%2 == 0]
+        self.cases_impaires = [(i,j) for i in range(n) for j in range(m) if (i+j)%2 == 1]
 
+        # All pairs of cells in the grid
         self.paires = grid.all_pairs()
 
+        # Initialize cost matrix for assignment
         y = len(self.cases_paires)
         z = len(self.cases_impaires)
-        self.matrice = np.zeros([y,z])    
+        self.matrice = np.zeros([y, z])    
 
-        for ((a,b),(c,d)) in self.paires :
-            if (a+b)%2==0:
+        # Fill the cost matrix based on the difference in values
+        for ((a, b), (c, d)) in self.paires:
+            if (a + b) % 2 == 0:
                 g = self.valeurs[a][b]
                 h = self.valeurs[c][d]
-                self.matrice[self.cases_paires.index((a,b))][self.cases_impaires.index((c,d))]=abs(g-h)-g-h
-            if (c+d)%2==0:
+                self.matrice[self.cases_paires.index((a, b))][self.cases_impaires.index((c, d))] = abs(g - h) - g - h
+            if (c + d) % 2 == 0:
                 g = self.valeurs[a][b]
                 h = self.valeurs[c][d]
-                self.matrice[self.cases_paires.index((c,d))][self.cases_impaires.index((a,b))]=abs(g-h)-g-h
+                self.matrice[self.cases_paires.index((c, d))][self.cases_impaires.index((a, b))] = abs(g - h) - g - h
 
+        # Shift matrix to ensure all entries are non-negative
         self.matrice = self.matrice + abs(np.min(self.matrice))
-        if y>z:
-            self.matrice = np.vstack([self.matrice, np.zeros((y-z,y))])
-            
 
-    def initialisation(self,M):
+        # If there are more pairs than impairs, pad the matrix with zeros
+        if y > z:
+            self.matrice = np.vstack([self.matrice, np.zeros((y - z, y))])
+
+    def initialisation(self, M):
         """
         Performs the initialization step for the Hungarian algorithm.
 
@@ -544,128 +550,143 @@ class SolverHungarian(Solver):
         M : ndarray
             The matrix to be initialized by subtracting the row and column minima.
         """
-            
+        # Subtract the minimum value of each row from all elements in that row
         row_min = np.min(M, axis=1)
         M -= row_min[:, np.newaxis]
+
+        # Subtract the minimum value of each column from all elements in that column
         col_min = np.min(M, axis=0)
         M -= col_min
-            
-            
 
     def unslashed_zero(self, M, slashed): 
         """
-            Returns a dictionary with the number of zero entries per row that are not blocked.
+        Returns a dictionary with the number of zero entries per row that are not blocked.
 
-            Parameters
-            ----------
-            M : ndarray
-                The cost matrix.
-            barre : dict
-                A dictionary indicating blocked cells.
+        Parameters
+        ----------
+        M : ndarray
+            The cost matrix.
+        slashed : dict
+            A dictionary indicating blocked cells.
 
-            Returns
-            -------
-            dict
-                A dictionary with row indices as keys and the count of zeros as values.
-            """
+        Returns
+        -------
+        dict
+            A dictionary with row indices as keys and the count of zeros as values.
+        """
         s = M.shape[0]
         d = {}
         for i in range(s):
-                n = 0
-                b = False
-                for j in range(s):
-                    if M[i,j] == 0 and (i,j) not in slashed:
-                        n += 1
-                        b = True
-                    if b :
-                        d[i] = n
+            n = 0
+            b = False
+            for j in range(s):
+                if M[i, j] == 0 and (i, j) not in slashed:
+                    n += 1
+                    b = True
+                if b:
+                    d[i] = n
         return d 
-    
+
     def index_min(self, d, deja_vu): 
         """
-            Returns the index of the minimum value from the dictionary that has not been visited.
+        Returns the index of the minimum value from the dictionary that has not been visited.
 
-            Parameters
-            ----------
-            d : dict
-                A dictionary of row indices and zero counts.
-            deja_vu : list
-                A list of visited row indices.
+        Parameters
+        ----------
+        d : dict
+            A dictionary of row indices and zero counts.
+        deja_vu : list
+            A list of visited row indices.
 
-            Returns
-            -------
-            int
-                The index of the row with the minimum zero count.
-            """
+        Returns
+        -------
+        int
+            The index of the row with the minimum zero count.
+        """
         m, i = 10000, -1
-        for (key,value) in d.items():
-                if value < m and key not in deja_vu:
-                    m, i = value, key
+        for (key, value) in d.items():
+            if value < m and key not in deja_vu:
+                m, i = value, key
         return i 
 
-    def step1(self,M):
+    def step1(self, M):
         """
-            Executes the first step of the Hungarian algorithm.
+        Executes the first step of the Hungarian algorithm.
 
-            Parameters
-            ----------
-            M : ndarray
-                The cost matrix.
+        Parameters
+        ----------
+        M : ndarray
+            The cost matrix.
 
-            Returns
-            -------
-            tuple
-                A tuple containing two elements:
-                - encadre : dict
-                    A dictionary of marked cells.
-                - barre : dict
-                    A dictionary of blocked cells.
-            """
+        Returns
+        -------
+        tuple
+            A tuple containing two elements:
+            - encadre : dict
+                A dictionary of marked cells.
+            - barre : dict
+                A dictionary of blocked cells.
+        """
         slashed = {}
         s = M.shape[0]
         outlined = {}            
         visited = []
         a = True 
-        while a : 
-                l1, l2 = len(outlined), len(slashed)
-                d = self.unslashed_zero(M, slashed)
-                row = self.index_min(d, visited)
-                visited.append(row)
-                
-                b = False
-                col = -1
+        while a:
+            # Count zeros in each row and find row with minimum zeros
+            l1, l2 = len(outlined), len(slashed)
+            d = self.unslashed_zero(M, slashed)
+            row = self.index_min(d, visited)
+            visited.append(row)
+
+            # Find the first zero in the row and outline the corresponding column
+            b = False
+            col = -1
+            for j in range(s):
+                if M[row, j] == 0 and (row, j) not in slashed and not b:
+                    outlined[(row, j)] = True
+                    b = True
+                    col = j
+
+            if b:
+                # Mark slashed cells in the row and column
                 for j in range(s):
-                    if M[row,j] == 0 and (row,j) not in slashed and not b : 
-                        outlined[(row, j)] = True
-                        b = True
-                        col = j
-                        
-                if b: 
-                    for j in range(s):
-                        if j != col and M[row,j] == 0:
-                            slashed[(row,j)] = True
-                            
-                    for i in range(s):
-                        if i != row and M[i,col] == 0:
-                            slashed[(i,col)] = True
-                
-                d = self.unslashed_zero(M, slashed)
-                if self.index_min(d, visited) == -1: 
-                    a = False
-                    
-                if len(outlined) == l1 and len(slashed) == l2: 
-                    a = False
-                if len(outlined) == s:
-                    return outlined, True
+                    if j != col and M[row, j] == 0:
+                        slashed[(row, j)] = True
+
+                for i in range(s):
+                    if i != row and M[i, col] == 0:
+                        slashed[(i, col)] = True
+
+            # Continue until no more zeros are uncovered
+            d = self.unslashed_zero(M, slashed)
+            if self.index_min(d, visited) == -1:
+                a = False
+
+            # If no progress is made, terminate
+            if len(outlined) == l1 and len(slashed) == l2:
+                a = False
+
+            # If all rows are outlined, return
+            if len(outlined) == s:
+                return outlined, True
                     
         return outlined, slashed
-    
-    def final_solution(self,result):
-        for ((a,b),(c,d)) in result:
-            if self.grid.is_valid_pair(a,b,c,d):
-                self.pairs.append(((a,b),(c,d)))
-    
-    def step2(self,M):
+
+    def final_solution(self, result):
+        """
+        Finalizes the solution by storing the valid pairs.
+
+        Parameters
+        ----------
+        result : list of tuple
+            The list of valid pairs of cells.
+        """
+        for ((a, b), (c, d)) in result:
+            if self.grid.is_valid_pair(a, b, c, d):
+                self.pairs.append(((a, b), (c, d)))
+
+    def step2(self, M):
         """
         Executes the second step of the Hungarian algorithm.
 
@@ -686,25 +707,30 @@ class SolverHungarian(Solver):
         s = M.shape[0]
         outlined, slashed = self.step1(M)
         marked_row, marked_col = {}, {}
+
+        # Mark rows that do not have any outlined zeros
         for i in range(s):
             n = 0
             for j in range(s):
-                if (i,j) in outlined:
+                if (i, j) in outlined:
                     n += 1
-            if n == 0: 
+            if n == 0:
                 marked_row[i] = True
+
         b = True
         while b:
-            l1,l2 = len(marked_row), len(marked_col)
+            # Mark columns corresponding to slashed cells in marked rows
+            l1, l2 = len(marked_row), len(marked_col)
             for j in range(s):
                 for i in range(s):
-                    if (i,j) in slashed and i in marked_row:
+                    if (i, j) in slashed and i in marked_row:
                         marked_col[j] = True
             if len(marked_row) == l1 and len(marked_col) == l2:
                 b = False
+
         return marked_row, marked_col
 
-    def step3(self,M):
+    def step3(self, M):
         """
         Executes the third step of the Hungarian algorithm.
 
@@ -718,15 +744,16 @@ class SolverHungarian(Solver):
         m = 100000
         for i in range(s):
             for j in range(s):
-                if i in marked_row and j not in marked_col and M[i,j] < m:
-                    m = M[i,j]
+                if i in marked_row and j not in marked_col and M[i, j] < m:
+                    m = M[i, j]
 
+        # Adjust the matrix values based on the minimum value found
         for i in range(s):
             for j in range(s):
                 if i in marked_row and j not in marked_col:
-                    M[i,j] -= m
+                    M[i, j] -= m
                 if i not in marked_row and j in marked_col:
-                    M[i,j] += m
+                    M[i, j] += m
 
     def run(self):
         """
@@ -737,17 +764,26 @@ class SolverHungarian(Solver):
         """
         M = np.array(self.matrice)
         M_work = np.copy(M)
+        
+        # Initialize the matrix
         self.initialisation(M_work)
+
+        # Iteratively apply the Hungarian algorithm steps
         while self.step1(M_work)[1] != True:
             self.step3(M_work)
-            
+
+        # Extract the result from the outlined pairs
         outlined = self.step1(M_work)[0]
         pairs_list = list(outlined.keys())
         result = []
 
-        for (i,j) in pairs_list:
-            result.append(((self.cases_paires[i][0],self.cases_paires[i][1]),(self.cases_impaires[j][0],self.cases_impaires[j][1])))
+        for (i, j) in pairs_list:
+            result.append(((self.cases_paires[i][0], self.cases_paires[i][1]), 
+                           (self.cases_impaires[j][0], self.cases_impaires[j][1])))
+
+        # Finalize the solution
         self.final_solution(result)
+
 
 
 class SolverScipy(Solver):#We implement the solver using the linear_sum_assignment function from the scipy library to compare 
