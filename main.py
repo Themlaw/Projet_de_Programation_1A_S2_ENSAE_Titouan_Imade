@@ -32,7 +32,7 @@ g = Grid.grid_from_file(file_name,read_values=True)
     # print("The score of the final Solver is : ", sp.score())
     # g.plot()
 
-all_grid_index = ["00","01","02","03","04","05","11","12","13","14","15","16","17","18","19"]#,"21","22","23","24","25","26","27","28","29"]
+all_grid_index = ["00","01","02","03","04","05","11","12","13","14","15","16","17","18","19","21"]#,"22","23","24","25","26","27","28","29"]
 #We test all grid with scipy 
 # for grid_index in all_grid_index:
 #     file_name = data_path + "grid"+grid_index+".in" 

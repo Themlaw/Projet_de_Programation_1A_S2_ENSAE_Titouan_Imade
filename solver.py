@@ -82,27 +82,23 @@ class SolverGreedy(Solver):
 
     def run(self): # solves the grid using the greedy method : at each step, the least expensive pair is chosen 
         sol = []
-        #self.pairs = self.grid.all_pairs()
         G = self.grid.all_pairs()
-        #p = self.pairs
         d = {}
         for i in range(self.grid.n):
-                    for j in range(self.grid.m):
-                         d[(i,j)] = False
+            for j in range(self.grid.m):
+                d[(i,j)] = False
                  
-        def interating(G, sol): # Iterates over a list
-            if G == []: 
-                self.pairs = sol
-            if G != []:
-                l = [self.grid.cost(pair) for pair in G] 
-                ind = self.index_min(l) # thus, l[ind] is the minimum of l 
-                pair = G[ind]           # thus, pair is the less expensive edge
-                d[pair[0]] = True
-                d[pair[1]] = True
-                sol.append(pair)
-                interating (self.remove(pair,G),sol) # we start again, the programm will stop because G will be empty at some point
-
-        interating(G,[])
+        # Iterative version
+        while G:
+            l = [self.grid.cost(pair) for pair in G]
+            ind = self.index_min(l) # get index of minimum cost
+            pair = G[ind]           # get pair with minimum cost
+            d[pair[0]] = True
+            d[pair[1]] = True
+            sol.append(pair)
+            G = self.remove(pair, G) # remove pair and its connected edges
+            
+        self.pairs = sol
     
 
 
