@@ -2,7 +2,7 @@ import pygame
 import tkinter as tk
 from tkinter import messagebox
 from grid import Grid 
-from solver import SolverScipy, SolverEmpty, Solver
+from solver_version_finale import SolverScipy, SolverEmpty, Solver
 import math
 from copy import deepcopy
 from typing import Union
@@ -465,43 +465,8 @@ class PygameGame():
      
 
 class PygameSoloGame(PygameGame):
-    """
-    A subclass of PygameGame that implements the solo player mode for the grid game.
     
-    This class inherits from `PygameGame` and overrides the necessary methods to
-    handle the specific logic for a solo player game. It manages user interactions,
-    such as selecting grid cells, validating the selected pairs, and updating the game state.
-    It also renders the game's graphical elements, like the grid and buttons, and handles the game loop.
-    
-    Attributes
-    ----------
-    None additional to `PygameGame` class attributes.
-    
-    Methods
-    -------
-    __init__()
-        Initializes the solo game by calling the base class constructor and setting up game-specific elements.
-    
-    handle_cell_click(pos)
-        Handles a click event on the grid by determining which cell was clicked, updating the game state 
-        with the clicked cell, and performing any necessary checks for valid or invalid pairs.
-    
-    draw_buttons()
-        Draws the action buttons in the game interface, such as "Reset", "Show solution", and "Menu".
-        Adjusts their positions based on the window size and draws them on the screen.
-    
-    draw_all()
-        Draws all elements of the game state on the screen. This includes the grid, linked cells, buttons, 
-        event text, and scores, ensuring that the game interface is properly updated each frame.
-    
-    run()
-        Starts the main game loop, handling all the events (such as mouse clicks, window resizing), updating the game state, 
-        and rendering the screen continuously. The loop ends when the user chooses to quit or when the game is completed.
-    """
     def __init__(self):
-        """
-        Initializes the PygameSoloGame class.
-        """
         super().__init__()
 
 
@@ -675,48 +640,7 @@ class PygameSoloGame(PygameGame):
         pygame.quit()
     
 class PygameTwoPlayerGame(PygameGame):
-    """
-    A subclass of PygameGame that implements a two-player mode for the grid game.
-
-    This class manages the game logic for two players, where each player takes turns 
-    to select valid pairs of cells in the grid. The game tracks the pairs selected by each player 
-    and displays the score for both players. The game ends when all pairs are linked or when one player forfeits.
-
-    Attributes
-    ----------
-    wich_turn : int
-        The current player's turn. 0 represents player 0, and 1 represents player 1.
-    player0_pairs : set
-        A set of pairs that player 0 has selected.
-    player1_pairs : set
-        A set of pairs that player 1 has selected.
-    players_pairs : list
-        A list containing the pairs selected by both players, player 0's pairs are at index 0, and player 1's at index 1.
-    
-    Methods
-    -------
-    __init__()
-        Initializes the PygameTwoPlayerGame class and sets up player turn tracking and pair storage.
-    
-    reset_grid()
-        Resets the game grid and clears player pair selections, reverting the game to its initial state.
-    
-    handle_cell_click(pos)
-        Processes a cell click event, updating the clicked cells, validating pairs, and handling invalid or already used selections.
-    
-    draw_buttons()
-        Draws the action buttons like "Forfeit" and "Menu" for two-player gameplay.
-    
-    draw_all()
-        Draws all elements of the game state, including the grid, linked cells, buttons, event text, and the score for both players.
-    """
     def __init__(self):
-        """
-        Initializes the PygameTwoPlayerGame class.
-
-        This constructor sets the initial turn (player 0 starts), clears the pair sets for both players, 
-        and initializes the `players_pairs` list to track the selected pairs for each player.
-        """
         super().__init__()
         self.wich_turn = 0 # 0 for player 0 and 1 for player 1
         self.player0_pairs = set()
@@ -724,30 +648,12 @@ class PygameTwoPlayerGame(PygameGame):
         self.players_pairs = [self.player0_pairs, self.player1_pairs] # List of pairs for each player
     
     def reset_grid(self):
-        """
-        Resets the grid and player-specific states.
-
-        Clears the selected pairs for both players, resets the turn to player 0, 
-        and calls the parent class method to reset the grid and related game states.
-        """
         super().reset_grid()
         self.player0_pairs.clear()
         self.player1_pairs.clear()
         self.wich_turn = 0 # 0 for player 0 and 1 for player 1
 
     def handle_cell_click(self, pos):
-        """
-        Handle a cell click event for two-player gameplay.
-
-        This method processes the user's click on the grid, updates the clicked cells, 
-        validates the selected pair, and checks if the selected cells are valid or already used by the players.
-        It also handles invalid or forbidden cell selections and switches turns between the players.
-
-        Parameters
-        ----------
-        pos : tuple of int
-            The (x, y) coordinates of the mouse click, which are used to determine which grid cell was clicked.
-        """
         x, y = pos
         col = (x - self.border) // self.cell_size
         row = (y - self.border) // self.cell_size
@@ -781,12 +687,6 @@ class PygameTwoPlayerGame(PygameGame):
             self.clicked_cells.clear()
 
     def draw_buttons(self):
-        """
-        Draws the action buttons for two-player gameplay.
-
-        This method renders the buttons for actions like "Forfeit" and "Menu" in the game interface, 
-        adjusting their sizes and positions based on the screen size and the game state.
-        """
         if self.grid_menu:
             self.draw_main_menu_buttons()
         
@@ -815,13 +715,6 @@ class PygameTwoPlayerGame(PygameGame):
             self.buttons["menu_button"] = [menu_button, self.menu_button, None]
     
     def draw_all(self):
-        """
-        Draws the entire game state.
-
-        This method draws all game elements, including the grid, the lines between linked cells, 
-        the action buttons, event text, and the scores for both players. It ensures that the screen 
-        is fully updated with the current game state after each turn.
-        """
         self.draw_grid()
         self.draw_line_between_cells(self.linked_cells)
         self.draw_buttons()
@@ -916,36 +809,7 @@ class PygameTwoPlayerGame(PygameGame):
 
 
 class PygamePlayerVsPlayerGame(PygameTwoPlayerGame):
-    """
-    A subclass of PygameTwoPlayerGame for implementing the player versus player mode.
-
-    This class adds the logic for running a two-player game where each player takes turns selecting valid pairs of cells.
-    It tracks the scores for both players and determines the winner based on the score. The game loop runs until one player wins 
-    or the user chooses to quit. The class overrides the `run` method to implement the player turn management and endgame conditions.
-
-    Attributes
-    ----------
-    None additional to `PygameTwoPlayerGame` class attributes.
-
-    Methods
-    -------
-    run()
-        Starts the main game loop, where players take turns, and the game state is continuously updated. 
-        The loop ends when a player wins, the game is finished, or the user quits.
-    """
     def run(self):
-        """
-        Run the game loop for player versus player mode.
-
-        This method runs the main loop of the game, alternating between player turns, checking for player actions,
-        and rendering the game state. It handles player actions (like selecting cells and pairing them), checks for game completion, 
-        and determines the winner based on the players' scores.
-
-        The loop also handles resizing of the window and other events like quitting or scrolling.
-        When the game ends, it displays the final result (winner or draw) and allows the user to either restart or return to the main menu.
-
-        The game continues running until the player chooses to quit or a winner is determined.
-        """
         self.draw_buttons()
         self.adjust_for_resize()
         while self.running:
@@ -998,72 +862,7 @@ class PygamePlayerVsPlayerGame(PygameTwoPlayerGame):
 
     
 class GameMenu:
-    """
-    A class that manages the game menu using Tkinter.
-
-    This class provides a graphical user interface for navigating through the game's menu options,
-    such as playing the game, adjusting settings, viewing credits, and quitting the game. It organizes 
-    the game's settings and play modes, including solo and multiplayer options, and handles the event loop 
-    for user interaction.
-
-    Attributes
-    ----------
-    master : tk.Tk
-        The main Tkinter window for displaying the menu.
-    sound_effect : tk.BooleanVar
-        The variable that holds the sound effect setting (on/off).
-    music_volume : tk.IntVar
-        The variable that holds the music volume setting (0-100).
-    computer_level : tk.IntVar
-        The variable that holds the computer level setting (1-7).
-    main_frame : tk.Frame
-        The frame that holds the main menu components.
-    play_frame : tk.Frame
-        The frame that holds the play menu components.
-    settings_frame : tk.Frame
-        The frame that holds the settings menu components.
-    credits_frame : tk.Frame
-        The frame that holds the credits menu components.
-
-    Methods
-    -------
-    __init__()
-        Initializes the GameMenu class, sets up the Tkinter window, and prepares the UI elements.
-    
-    clear_frames()
-        Clears the current frames in the menu to prepare for new content.
-    
-    build_main_menu()
-        Builds and displays the main menu of the game with options to start a game, adjust settings, view credits, and quit.
-
-    show_play_menu()
-        Displays the play menu with options to select different game modes.
-
-    show_settings_menu()
-        Displays the settings menu with options to adjust sound effects, music volume, and computer difficulty level.
-
-    show_credits_menu()
-        Displays the credits menu with information about the game's creators.
-
-    solo_game()
-        Starts a solo game by creating an instance of PygameSoloGame and running it.
-
-    two_player_game()
-        Starts a two-player game by creating an instance of PygamePlayerVsPlayerGame and running it.
-
-    quit_game()
-        Quits the game by closing the Tkinter window after user confirmation.
-
-    mainloop()
-        Starts the Tkinter main loop, allowing the game menu to interact with the user.
-    """
     def __init__(self):
-        """
-        Initializes the GameMenu class.
-
-        Sets up the Tkinter window, including its title, size, position, and font settings.
-        It also initializes the menu frames, sound, music, and computer level settings.
-        """
         self.master = tk.Tk()
         self.master.title("Le jeu des cases")
         self.master.protocol("WM_DELETE_WINDOW", self.quit_game)  # Handle window close event
@@ -1097,23 +896,12 @@ class GameMenu:
 
 
     def clear_frames(self):
-        """
-        Clears all the frames in the menu.
-
-        This method is used to remove all widgets from the frames before displaying new content.
-        """
         for frame in (self.main_frame, self.play_frame, self.settings_frame, self.credits_frame):
             for widget in frame.winfo_children():
                 widget.destroy()
             frame.pack_forget()
 
     def build_main_menu(self):
-        """
-        Builds and displays the main menu of the game.
-
-        This method creates the main menu with buttons for starting the game, adjusting settings, 
-        viewing credits, and quitting the game. It is the starting point for navigating the menu.
-        """
         self.clear_frames()
         self.main_frame.pack(padx=20, pady=20, expand=True, fill=tk.BOTH)
         
@@ -1129,11 +917,6 @@ class GameMenu:
 
         
     def show_play_menu(self):
-        """
-        Displays the play menu.
-
-        This method clears the current frame and creates a play menu with buttons for different game modes.
-        """
         self.clear_frames()
         self.play_frame.pack(padx=20, pady=20, expand=True, fill=tk.BOTH)
         
@@ -1156,12 +939,6 @@ class GameMenu:
         back_button.place(relx=1.0, rely=0.0, x=-10, y=10, anchor='ne')
 
     def show_settings_menu(self):
-        """
-        Displays the settings menu.
-
-        This method clears the current frame and creates a settings menu with options to adjust sound effects,
-        music volume, and computer level. It allows the user to configure these settings.
-        """
         self.clear_frames()
         self.settings_frame.pack(padx=20, pady=20, expand=True, fill=tk.BOTH)
 
@@ -1190,11 +967,6 @@ class GameMenu:
         back_button.place(relx=1.0, rely=0.0, x=-10, y=10, anchor='ne')
 
     def show_credits_menu(self):
-        """
-        Displays the credits menu.
-
-        This method clears the current frame and creates a credits menu that shows information about the creators of the game.
-        """
         self.clear_frames()
         self.credits_frame.pack(padx=20, pady=20, expand=True, fill=tk.BOTH)
 
@@ -1210,12 +982,6 @@ class GameMenu:
         back_button.place(relx=1.0, rely=0.0, x=-10, y=10, anchor='ne')
 
     def solo_game(self):
-        """
-        Starts a solo game.
-
-        This method creates an instance of `PygameSoloGame`, hides the Tkinter window, runs the solo game, 
-        and then shows the Tkinter window again after the game finishes.
-        """
         game = PygameSoloGame()
         self.master.withdraw()  # Hide the Tkinter window
         game.run()
@@ -1223,12 +989,6 @@ class GameMenu:
         self.build_main_menu()  # Rebuild the main menu after the game ends
 
     def two_player_game(self):
-        """
-        Starts a two-player game.
-
-        This method creates an instance of `PygamePlayerVsPlayerGame`, hides the Tkinter window, runs the two-player game, 
-        and then shows the Tkinter window again after the game finishes.
-        """
         game = PygamePlayerVsPlayerGame()
         self.master.withdraw()
         game.run()
@@ -1236,12 +996,6 @@ class GameMenu:
         self.build_main_menu()
 
     def quit_game(self):
-        """
-        Quits the game.
-
-        This method shows a confirmation dialog asking the user if they are sure they want to quit the game. 
-        If confirmed, it closes the Tkinter window.
-        """
         answer = messagebox.askquestion("Quit Game", "Are you sure you want to quit, all unsave progress will be reset")
         if answer == "yes":
             self.master.quit()
